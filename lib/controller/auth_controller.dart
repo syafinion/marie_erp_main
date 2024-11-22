@@ -9,54 +9,49 @@ import '../constants/LoadingWidget.dart';
 
 class AuthController extends GetxController {
   final storage = const FlutterSecureStorage();
-  Future authUser({String? email, String? password}) async {
+
+  Future<Map<String, dynamic>?> authUser(
+      {String? email, String? password}) async {
     try {
-      // LoadingWidget.startLoadingWidget();
-      print("-----------------------------");
-      print(endPoint['login']);
-      var body = json.encode({"email": email, "password": password});
-      print(body);
-
-      final response = await http.post(Uri.parse(endPoint['login']),
-          // contentType: "application/json",
-          headers: {'Accept': 'application/json'},
-          body: body);
-      var result = jsonDecode(response.body);
-      print(response.statusCode); // Print the status code
-      print(".......$result");
-      // Check if the response is successful
-      if (response.statusCode == 200) {
-
-        storage.write(key: "token", value: result['token']);
-        storage.write(key: "userId", value: result['userId']);
-
-        // Accessing the status from the response JSON
-        var status = result['status'];
-        print('Status: $status');
-        var token = await storage.read(key: "token");
-        print(token);
-
-        // if (kDebugMode) {
-        //   print('result login body...............');
-        // }
-        // if (kDebugMode) {
-        //   print(result["is_stepper_completed"]);
-        // }
-
-        // LoadingWidget.endLoadingWidget();
-
-        return result;
+      // Test reachability
+      final connectivityTest = await http.get(Uri.parse(endPoint['login']!));
+      if (connectivityTest.statusCode != 404) {
+        print("API is reachable");
       } else {
-        // LoadingWidget.endLoadingWidget();
-        // PopupDialogs.displayErrorOnlyMessage(result["message"]);
+        print("API not reachable");
+        return null;
+      }
+
+      print("-----------------------------");
+      print("Request URL: ${endPoint['login']}");
+      var body = json.encode({"email": email, "password": password});
+      print("Request Body: $body");
+
+      final response = await http.post(
+        Uri.parse(endPoint['login']!),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: body,
+      );
+
+      print("Response Code: ${response.statusCode}");
+      print("Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        var result = jsonDecode(response.body);
+        // Convert `userId` to a string before storing
+        await storage.write(key: "token", value: result['token']);
+        await storage.write(key: "userId", value: result['userId'].toString());
+        return result; // Return the parsed JSON
+      } else {
+        // Handle non-200 responses
+        print("Login failed: ${response.body}");
         return null;
       }
     } catch (error) {
-      if (kDebugMode) {
-        print(error);
-      }
-      // LoadingWidget.endLoadingWidget();
-      // PopupDialogs.displayErrorOnlyMessage(StringHelper.aPI_Crashed);
+      print("Error during login: $error");
       return null;
     }
   }

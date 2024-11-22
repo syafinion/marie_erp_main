@@ -19,18 +19,21 @@ class _LoginScreenState extends State<LoginScreen> {
   final storage = const FlutterSecureStorage();
 
   isLoggedIn() async {
-    userName.text ="karthickravikumar710@gmail.com";
-    password.text ="karthick007";
     var token = await storage.read(key: "token");
     if (token != null) {
+      // Token exists, proceed to the main screen
       await Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (context) => const MainScreen(
-            index: 0, selectedItems: [],
+            index: 0,
+            selectedItems: [],
           ),
         ),
       );
+    } else {
+      // No token found, remain on login screen
+      print("No valid session found. Please log in.");
     }
   }
 
@@ -47,9 +50,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isUserNameEmpty = true;
   bool isPasswordEmpty = true;
   bool isObsecure = false;
-
-  
-
 
   @override
   Widget build(BuildContext context) {
@@ -305,7 +305,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => const MainScreen(
-                                index: 0, selectedItems: [],
+                                index: 0,
+                                selectedItems: [],
                               ),
                             ),
                           );

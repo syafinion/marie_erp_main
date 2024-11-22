@@ -1,3 +1,5 @@
+import 'package:marie_erp/model/create_ingredients_model.dart';
+
 class IngredientModels {
   bool? isChecked;
   String? ingredient;
@@ -5,54 +7,67 @@ class IngredientModels {
   String? measurement;
   List<Measurements>? measurements;
 
-  IngredientModels(
-      {this.isChecked,
-        this.ingredient,
-        this.ingredientId,
-        this.measurement,
-        this.measurements});
+  // New fields
+  bool? isLoose;
+  bool? isCarton;
+  bool? isBag;
+  String? packageWeight;
+  String? unitPrice;
+  String? storageLocation;
+
+  // Add the barcode field
+  String? barcode;
+
+  IngredientModels({
+    this.isChecked,
+    this.ingredient,
+    this.ingredientId,
+    this.measurement,
+    this.measurements,
+    this.isLoose,
+    this.isCarton,
+    this.isBag,
+    this.packageWeight,
+    this.unitPrice,
+    this.storageLocation,
+    this.barcode, // Include in constructor
+  });
 
   IngredientModels.fromJson(Map<String, dynamic> json) {
     isChecked = json['isChecked'];
-    ingredient = json['ingredient'].toString();
-    ingredientId = json['ingredientId'].toString();
-    measurement = json['measurement'].toString();
-    if (json['measurements'] != null) {
-      measurements = <Measurements>[];
-      json['measurements'].forEach((v) {
-        measurements!.add(new Measurements.fromJson(v));
-      });
+    ingredient = json['ingredient']?.toString();
+    ingredientId = json['ingredientId']?.toString();
+    measurement = json['measurement']?.toString();
+    if (json['measurements'] is List) {
+      measurements = (json['measurements'] as List)
+          .map((v) => Measurements.fromJson(v))
+          .toList();
     }
+    isLoose = json['isLoose'] ?? false;
+    isCarton = json['isCarton'] ?? false;
+    isBag = json['isBag'] ?? false;
+    packageWeight = json['packageWeight']?.toString() ?? '';
+    unitPrice = json['unitPrice']?.toString() ?? '';
+    storageLocation = json['storageLocation']?.toString() ?? '';
+    barcode = json['barcode']?.toString(); // Parse barcode
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['isChecked'] = this.isChecked;
-    data['ingredient'] = this.ingredient;
-    data['ingredientId'] = this.ingredientId;
-    data['measurement'] = this.measurement;
-    if (this.measurements != null) {
-      data['measurements'] = this.measurements!.map((v) => v.toJson()).toList();
+    final Map<String, dynamic> data = {};
+    data['isChecked'] = isChecked;
+    data['ingredient'] = ingredient;
+    data['ingredientId'] = ingredientId;
+    data['measurement'] = measurement;
+    if (measurements != null) {
+      data['measurements'] = measurements!.map((v) => v.toJson()).toList();
     }
-    return data;
-  }
-}
-
-class Measurements {
-  String? measurementId;
-  String? measurement;
-
-  Measurements({this.measurementId, this.measurement});
-
-  Measurements.fromJson(Map<String, dynamic> json) {
-    measurementId = json['measurement_id'].toString();
-    measurement = json['measurement'].toString();
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['measurement_id'] = this.measurementId;
-    data['measurement'] = this.measurement;
+    data['isLoose'] = isLoose;
+    data['isCarton'] = isCarton;
+    data['isBag'] = isBag;
+    data['packageWeight'] = packageWeight;
+    data['unitPrice'] = unitPrice;
+    data['storageLocation'] = storageLocation;
+    data['barcode'] = barcode; // Include barcode in JSON
     return data;
   }
 }

@@ -1,17 +1,16 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:marie_erp/constants/color.dart';
 import 'package:marie_erp/controller/store_room_controller.dart';
+import 'package:marie_erp/view/barcode_scanner_page.dart';
+import 'package:marie_erp/view/groups_screen.dart';
 
 import '../constants/groupes_list.dart';
 import '../controller/common_controller.dart';
 import '../controller/groups_controller.dart';
-import 'groups_screen.dart';
 
 class StoreRoomScreen extends StatefulWidget {
   final int? index;
@@ -47,6 +46,16 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
   bool isNotselectedIngeridiants = false;
   String nameOfIngeridiant = "";
 
+  // New variables for checkboxes
+  bool isLooseChecked = false;
+  bool isCartonChecked = false;
+  bool isBagChecked = false;
+
+  // New controllers for additional input fields
+  TextEditingController packageWeightController = TextEditingController();
+  TextEditingController unitPriceController = TextEditingController();
+  TextEditingController storageLocationController = TextEditingController();
+
   void onItemTapped(int index) {
     setState(() {
       selectedItems = index;
@@ -60,8 +69,6 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
 
   @override
   void initState() {
-    // getStoreroomIngeridiant();
-    // print(commonController.selectedItems[0].name);
     Future.delayed(Duration.zero).then((value) => getData());
     super.initState();
   }
@@ -99,17 +106,12 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
       isBeverages = nameOfIngeridiant == "Beverages";
       isDiary = nameOfIngeridiant == "Diary";
       await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-      // print(storeRoomController
-      //     .ingredientsPowedersList);
       setState(() {});
     }
   }
 
-  // bool showAllItems = false;
-
   @override
   Widget build(BuildContext context) {
-    // scaffoldkey.currentState!.openDrawer();
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
     TextEditingController ingredientsEditController = TextEditingController();
@@ -119,15 +121,6 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
         key: scaffoldkey,
         appBar: AppBar(
           surfaceTintColor: Colors.white,
-          // leading: InkWell(
-          //   onTap: () {
-          //     // scaffoldkey.currentState!.openDrawer();
-          //   },
-          //   child: Icon(
-          //     Icons.arrow_back_ios_rounded,
-          //     size: height * 0.039,
-          //   ),
-          // ),
           title: Text(
             "Pick your ingredients from the table.",
             style: TextStyle(
@@ -162,298 +155,520 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
                           children: [
                             InkWell(
                               onTap: () {
+                                final parentContext = context;
+                                // Reset checkbox values
+                                isLooseChecked = false;
+                                isCartonChecked = false;
+                                isBagChecked = false;
+
+                                // Clear controllers
+                                ingredientsController.clear();
+                                selectedUnit = null;
+                                packageWeightController.clear();
+                                unitPriceController.clear();
+                                storageLocationController.clear();
+
                                 showDialog(
                                   context: context,
                                   builder: (context) {
                                     return AlertDialog(
-                                      // insetPadding: EdgeInsets.all(0.0),
-                                      content: SizedBox(
-                                        // width: double.maxFinite,
-                                        height: height *
-                                            0.25, // Ensure the AlertDialog content has a fixed width
-                                        child: Column(
-                                          children: [
-                                            Text(
-                                                    "Add an Ingredient or Unit of Measure",
+                                      content: StatefulBuilder(
+                                        builder: (context, setState) {
+                                          return SingleChildScrollView(
+                                            child: Column(
+                                              children: [
+                                                Text(
+                                                  "Add an Ingredient or Unit of Measure",
+                                                  style: TextStyle(
+                                                      fontFamily: "Lexand",
+                                                      fontSize: height * 0.015,
+                                                      color: Colors.black,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                                SizedBox(height: height * 0.02),
+                                                SizedBox(
+                                                  height: height * 0.05,
+                                                  child: TextFormField(
                                                     style: TextStyle(
+                                                      fontFamily: "Lexand",
+                                                      fontSize: height * 0.018,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                    controller:
+                                                        ingredientsController,
+                                                    decoration: InputDecoration(
+                                                      contentPadding:
+                                                          const EdgeInsets.only(
+                                                              left: 16.0),
+                                                      hintStyle: TextStyle(
                                                         fontFamily: "Lexand",
                                                         fontSize:
-                                                            height * 0.015,
-                                                        color: Colors.black,
+                                                            height * 0.014,
                                                         fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                            SizedBox(height: height * 0.02),
-                                            SizedBox(
-                                              height: height * 0.05,
-                                              child: TextFormField(
-                                                style: TextStyle(
-                                                  fontFamily: "Lexand",
-                                                  fontSize: height * 0.018,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                                controller:
-                                                    ingredientsController,
-                                                decoration: InputDecoration(
-                                                  // suffixIcon: Padding(
-                                                  //   padding: const EdgeInsets.all(8.0),
-                                                  //   child: Image.asset(
-                                                  //     "assets/user_icon.png",
-                                                  //     height: height * 0.02,
-                                                  //   ),
-                                                  // ),
-                                                  contentPadding:
-                                                      const EdgeInsets.only(
-                                                          left: 16.0),
-                                                          hintStyle:  TextStyle(
-                                                      fontFamily: "Lexand",
-                                                      fontSize: height * 0.014,
-                                                      fontWeight:
-                                                          FontWeight.w300,
+                                                            FontWeight.w300,
+                                                      ),
+                                                      hintText:
+                                                          "Enter the ingredient name",
+                                                      floatingLabelStyle:
+                                                          const TextStyle(
+                                                        fontFamily: "Lexand",
+                                                        fontWeight:
+                                                            FontWeight.w300,
+                                                      ),
+                                                      border:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(15.0),
+                                                        borderSide:
+                                                            const BorderSide(
+                                                                width: 1.5),
+                                                      ),
+                                                      disabledBorder:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(30.0),
+                                                        borderSide:
+                                                            const BorderSide(
+                                                                width: 1.5),
+                                                      ),
+                                                      enabledBorder:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(30.0),
+                                                        borderSide: BorderSide(
+                                                          color: borderColor
+                                                              .withOpacity(1.0),
+                                                          width: 1.5,
+                                                        ),
+                                                      ),
+                                                      focusedBorder:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(30.0),
+                                                        borderSide:
+                                                            const BorderSide(
+                                                                width: 1.5),
+                                                      ),
                                                     ),
-                                                  hintText: "Enter the ingredient name",
-                                                  floatingLabelStyle:
-                                                      const TextStyle(
-                                                    fontFamily: "Lexand",
-                                                    fontWeight: FontWeight.w300,
+                                                    onChanged: (value) {
+                                                      setState(() {});
+                                                    },
                                                   ),
-                                                  border: OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            15.0),
-                                                    borderSide:
-                                                        const BorderSide(
-                                                            width: 1.5),
-                                                  ),
-                                                  disabledBorder:
-                                                      OutlineInputBorder(
+                                                ),
+                                                SizedBox(height: height * 0.02),
+                                                Container(
+                                                  height: height * 0.05,
+                                                  decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                             30.0),
-                                                    borderSide:
-                                                        const BorderSide(
-                                                            width: 1.5),
-                                                  ),
-                                                  enabledBorder:
-                                                      OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            30.0),
-                                                    borderSide: BorderSide(
+                                                    border: Border.all(
                                                       color: borderColor
                                                           .withOpacity(1.0),
                                                       width: 1.5,
                                                     ),
                                                   ),
-                                                  focusedBorder:
-                                                      OutlineInputBorder(
+                                                  child:
+                                                      DropdownButtonFormField<
+                                                          String>(
+                                                    hint: Text(
+                                                      "Select measurement",
+                                                      style: TextStyle(
+                                                        fontFamily: "Lexand",
+                                                        fontSize:
+                                                            height * 0.014,
+                                                        fontWeight:
+                                                            FontWeight.w300,
+                                                      ),
+                                                    ),
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                      horizontal: 10,
+                                                    ),
+                                                    value: selectedUnit,
+                                                    iconEnabledColor:
+                                                        primaryColor,
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                             30.0),
-                                                    borderSide:
-                                                        const BorderSide(
-                                                            width: 1.5),
-                                                  ),
-                                                ),
-                                                onChanged: (value) {
-                                                  setState(() {});
-                                                },
-                                              ),
-                                            ),
-                                            SizedBox(height: height * 0.02),
-                                            Container(
-                                              height: height * 0.05,
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(30.0),
-                                                border: Border.all(
-                                                  color: borderColor
-                                                      .withOpacity(1.0),
-                                                  width: 1.5,
-                                                ),
-                                              ),
-
-                                              child: DropdownButtonFormField<
-                                                  String>(
-                                                hint: Text(
-                                                  "Select measurement",
-                                                  style: TextStyle(
-                                                    fontFamily: "Lexand",
-                                                    fontSize: height * 0.014,
-                                                    fontWeight: FontWeight.w300,
-                                                  ),
-                                                ),
-                                                padding: const EdgeInsets.symmetric(
-                                                    horizontal: 10,),
-                                                value: selectedUnit,
-                                                iconEnabledColor: primaryColor,
-                                                borderRadius:
-                                                    BorderRadius.circular(30.0),
-                                                onChanged: (String? newValue) {
-                                                  setState(() {
-                                                    selectedUnit = newValue!;
-                                                  });
-                                                },
-                                                items: <String>[
-                                                  'kg',
-                                                  'litre',
-                                                  'unit'
-                                                ].map<DropdownMenuItem<String>>(
-                                                  (String value) {
-                                                    return DropdownMenuItem<
-                                                        String>(
-                                                      // alignment: AlignmentDirectional.topStart,
-                                                      value: value,
-                                                      child: Text(
-                                                        value,
-                                                        style: TextStyle(
-                                                          fontFamily: "Lexand",
-                                                          fontSize:
-                                                              height * 0.018,
-                                                          fontWeight:
-                                                              FontWeight.w300,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                ).toList(),
-                                                decoration: InputDecoration(
-                                                  border: InputBorder.none,
-                                                  contentPadding:
-                                                      EdgeInsets.zero,
-                                                  floatingLabelStyle: TextStyle(
-                                                    fontFamily: "Lexand",
-                                                    fontSize: height * 0.013,
-                                                    fontWeight: FontWeight.w300,
-                                                  ),
-                                                ),
-                                                // Aligns the dropdown value vertically centered within the container
-                                                // alignment: Alignment.topCenter,
-                                              ),
-                                            ),
-                                            SizedBox(
-                                              height: height * 0.02,
-                                            ),
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: InkWell(
-                                                    onTap: () {
-                                                      Navigator.pop(context);
+                                                    onChanged:
+                                                        (String? newValue) {
+                                                      setState(() {
+                                                        selectedUnit =
+                                                            newValue!;
+                                                      });
                                                     },
-                                                    child: Padding(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                              horizontal:
-                                                                  width * 0.02),
-                                                      child: Container(
-                                                        height: height * 0.04,
-                                                        width: width,
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          // color: buttonColor
-                                                          //     .withOpacity(1.0),
-                                                          border: Border.all(color: buttonColor
-                                                              .withOpacity(1.0)),
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      15.0),
-                                                        ),
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(8.0),
-                                                          child: Center(
-                                                            child: Text(
-                                                              "Cancel",
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontFamily:
-                                                                      "Lexand",
-                                                                  fontSize:
-                                                                      height *
-                                                                          0.011,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w700),
-                                                            ),
+                                                    items: <String>[
+                                                      'kg',
+                                                      'litre',
+                                                      'unit'
+                                                    ].map<
+                                                            DropdownMenuItem<
+                                                                String>>(
+                                                        (String value) {
+                                                      return DropdownMenuItem<
+                                                          String>(
+                                                        value: value,
+                                                        child: Text(
+                                                          value,
+                                                          style: TextStyle(
+                                                            fontFamily:
+                                                                "Lexand",
+                                                            fontSize:
+                                                                height * 0.018,
+                                                            fontWeight:
+                                                                FontWeight.w300,
                                                           ),
                                                         ),
+                                                      );
+                                                    }).toList(),
+                                                    decoration: InputDecoration(
+                                                      border: InputBorder.none,
+                                                      contentPadding:
+                                                          EdgeInsets.zero,
+                                                      floatingLabelStyle:
+                                                          TextStyle(
+                                                        fontFamily: "Lexand",
+                                                        fontSize:
+                                                            height * 0.013,
+                                                        fontWeight:
+                                                            FontWeight.w300,
                                                       ),
                                                     ),
                                                   ),
                                                 ),
-                                                Expanded(
-                                                  child: InkWell(
-                                                    onTap: () async {
-                                                      var result =
-                                                          await storeRoomController
-                                                              .createIngredient(
-                                                                  nameOfIngeridiant,
-                                                                  ingredientsController
-                                                                      .text,
-                                                                  selectedUnit);
-                                                      if (result != null) {
-                                                        ingredientsController
-                                                            .clear();
-                                                            selectedUnit= null;
+                                                SizedBox(height: height * 0.02),
+                                                // Add TextFormField for packageWeight
+                                                SizedBox(
+                                                  height: height * 0.05,
+                                                  child: TextFormField(
+                                                    controller:
+                                                        packageWeightController,
+                                                    decoration: InputDecoration(
+                                                      hintText:
+                                                          "Enter package weight",
+                                                      contentPadding:
+                                                          const EdgeInsets.only(
+                                                              left: 16.0),
+                                                      border:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(15.0),
+                                                        borderSide:
+                                                            const BorderSide(
+                                                                width: 1.5),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(height: height * 0.02),
+                                                // Add TextFormField for unitPrice
+                                                SizedBox(
+                                                  height: height * 0.05,
+                                                  child: TextFormField(
+                                                    controller:
+                                                        unitPriceController,
+                                                    decoration: InputDecoration(
+                                                      hintText:
+                                                          "Enter unit price",
+                                                      contentPadding:
+                                                          const EdgeInsets.only(
+                                                              left: 16.0),
+                                                      border:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(15.0),
+                                                        borderSide:
+                                                            const BorderSide(
+                                                                width: 1.5),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(height: height * 0.02),
+                                                // Add TextFormField for storageLocation
+                                                SizedBox(
+                                                  height: height * 0.05,
+                                                  child: TextFormField(
+                                                    controller:
+                                                        storageLocationController,
+                                                    decoration: InputDecoration(
+                                                      hintText:
+                                                          "Enter storage location",
+                                                      contentPadding:
+                                                          const EdgeInsets.only(
+                                                              left: 16.0),
+                                                      border:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(15.0),
+                                                        borderSide:
+                                                            const BorderSide(
+                                                                width: 1.5),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(height: height * 0.02),
+                                                // Use Wrap instead of Row for checkboxes
+                                                Wrap(
+                                                  spacing: 10.0,
+                                                  children: [
+                                                    Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Checkbox(
+                                                          value: isLooseChecked,
+                                                          onChanged:
+                                                              (bool? value) {
                                                             setState(() {
-                                                              
+                                                              isLooseChecked =
+                                                                  value ??
+                                                                      false;
                                                             });
-                                                        Navigator.pop(context);
-                                                        await storeRoomController
-                                                            .stroreRoomingredientsList(
-                                                                nameOfIngeridiant);
-                                                      }
-                                                    },
-                                                    child: Padding(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                              horizontal:
-                                                                  width * 0.02),
-                                                      child: Container(
-                                                        height: height * 0.04,
-                                                        width: width,
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: buttonColor
-                                                              .withOpacity(1.0),
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      15.0),
+                                                          },
                                                         ),
+                                                        Text("Loose"),
+                                                      ],
+                                                    ),
+                                                    Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Checkbox(
+                                                          value:
+                                                              isCartonChecked,
+                                                          onChanged:
+                                                              (bool? value) {
+                                                            setState(() {
+                                                              isCartonChecked =
+                                                                  value ??
+                                                                      false;
+                                                            });
+                                                          },
+                                                        ),
+                                                        Text("Carton"),
+                                                      ],
+                                                    ),
+                                                    Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Checkbox(
+                                                          value: isBagChecked,
+                                                          onChanged:
+                                                              (bool? value) {
+                                                            setState(() {
+                                                              isBagChecked =
+                                                                  value ??
+                                                                      false;
+                                                            });
+                                                          },
+                                                        ),
+                                                        Text("Bag"),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: height * 0.02),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: InkWell(
+                                                        onTap: () {
+                                                          Navigator.pop(
+                                                              context);
+                                                        },
                                                         child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(8.0),
-                                                          child: Center(
-                                                            child: Text(
-                                                              "Save",
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontFamily:
-                                                                      "Lexand",
-                                                                  fontSize:
-                                                                      height *
-                                                                          0.011,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w700),
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                                  horizontal:
+                                                                      width *
+                                                                          0.02),
+                                                          child: Container(
+                                                            height:
+                                                                height * 0.04,
+                                                            width: width,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              border: Border.all(
+                                                                  color: buttonColor
+                                                                      .withOpacity(
+                                                                          1.0)),
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          15.0),
+                                                            ),
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(8.0),
+                                                              child: Center(
+                                                                child: Text(
+                                                                  "Cancel",
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .black,
+                                                                      fontFamily:
+                                                                          "Lexand",
+                                                                      fontSize:
+                                                                          height *
+                                                                              0.011,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w700),
+                                                                ),
+                                                              ),
                                                             ),
                                                           ),
                                                         ),
                                                       ),
                                                     ),
-                                                  ),
+                                                    Expanded(
+                                                      child: InkWell(
+                                                        onTap: () async {
+                                                          if (selectedUnit ==
+                                                                  null ||
+                                                              ingredientsController
+                                                                      .text ==
+                                                                  '' ||
+                                                              packageWeightController
+                                                                      .text ==
+                                                                  '' ||
+                                                              unitPriceController
+                                                                      .text ==
+                                                                  '' ||
+                                                              storageLocationController
+                                                                      .text ==
+                                                                  '') {
+                                                            // Show an error message
+                                                            return;
+                                                          }
+                                                          var result =
+                                                              await storeRoomController
+                                                                  .createIngredient(
+                                                            category:
+                                                                nameOfIngeridiant,
+                                                            ingredient:
+                                                                ingredientsController
+                                                                    .text,
+                                                            measurement:
+                                                                selectedUnit,
+                                                            isLoose:
+                                                                isLooseChecked,
+                                                            isCarton:
+                                                                isCartonChecked,
+                                                            isBag: isBagChecked,
+                                                            packageWeight:
+                                                                packageWeightController
+                                                                    .text,
+                                                            unitPrice:
+                                                                unitPriceController
+                                                                    .text,
+                                                            storageLocation:
+                                                                storageLocationController
+                                                                    .text,
+                                                          );
+                                                          if (result != null) {
+                                                            // Clear controllers
+                                                            ingredientsController
+                                                                .clear();
+                                                            packageWeightController
+                                                                .clear();
+                                                            unitPriceController
+                                                                .clear();
+                                                            storageLocationController
+                                                                .clear();
+                                                            selectedUnit = null;
+                                                            isLooseChecked =
+                                                                false;
+                                                            isCartonChecked =
+                                                                false;
+                                                            isBagChecked =
+                                                                false;
+                                                            setState(() {});
+                                                            Navigator.pop(
+                                                                context);
+                                                            await storeRoomController
+                                                                .stroreRoomingredientsList(
+                                                                    nameOfIngeridiant);
+                                                            // Navigate to Barcode Scanner Page
+                                                            Navigator.push(
+                                                              parentContext,
+                                                              MaterialPageRoute(
+                                                                builder:
+                                                                    (context) =>
+                                                                        BarcodeScannerPage(
+                                                                  ingredientId:
+                                                                      result['ingredientId']
+                                                                          .toString(),
+                                                                ),
+                                                              ),
+                                                            );
+                                                          }
+                                                        },
+                                                        child: Padding(
+                                                          padding: EdgeInsets
+                                                              .symmetric(
+                                                                  horizontal:
+                                                                      width *
+                                                                          0.02),
+                                                          child: Container(
+                                                            height:
+                                                                height * 0.04,
+                                                            width: width,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: buttonColor
+                                                                  .withOpacity(
+                                                                      1.0),
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          15.0),
+                                                            ),
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(8.0),
+                                                              child: Center(
+                                                                child: Text(
+                                                                  "Save",
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .white,
+                                                                      fontFamily:
+                                                                          "Lexand",
+                                                                      fontSize:
+                                                                          height *
+                                                                              0.011,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w700),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  ],
                                                 )
                                               ],
-                                            )
-                                          ],
-                                        ),
+                                            ),
+                                          );
+                                        },
                                       ),
                                     );
                                   },
@@ -467,9 +682,12 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
                             SizedBox(width: width * 0.02),
                             InkWell(
                               onTap: () async {
-                               await storeRoomController.saveIngredientAll(nameOfIngeridiant);
-                               await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                               },
+                                await storeRoomController
+                                    .saveIngredientAll(nameOfIngeridiant);
+                                await storeRoomController
+                                    .stroreRoomingredientsList(
+                                        nameOfIngeridiant);
+                              },
                               child: Icon(
                                 Icons.save,
                                 size: height * 0.03,
@@ -553,9 +771,6 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
                                                 "Beverages";
                                             isDiary =
                                                 nameOfIngeridiant == "Diary";
-
-                                            // print(storeRoomController
-                                            //     .ingredientsPowedersList);
                                           });
                                           await storeRoomController
                                               .stroreRoomingredientsList(
@@ -598,4659 +813,540 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
                             ),
                           ),
                           Expanded(
-                                  flex: 3,
-                                  child: SizedBox(
-                                    height: height * 0.7,
-                                    child: Obx(() => ListView.builder(
-                                      // shrinkWrap: true,
-                                      itemCount: storeRoomController
-                                          .ingredientList.length,
-                                      itemBuilder: (
-                                        context,
-                                        i,
-                                      ) {
-                                        return Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                          child: InkWell(
-                                                onTap: () {
-                                                  storeRoomController
-                                                                .ingredientList[
-                                                            i].isChecked =
-                                                        !storeRoomController
-                                                                .ingredientList[
-                                                            i].isChecked!;
-                                                  storeRoomController
-                                                                .ingredientList.refresh();
-                                                },
-                                                child: Container(
-                                                  width: width,
-                                                  margin: EdgeInsets.only(bottom: 2),
-                                                  // height: height*0.05,
-                                                  decoration: BoxDecoration(
-                                                    color: storeRoomController
-                                                                .ingredientList[
-                                                            i].isChecked!
-                                                        ? primaryColor
-                                                            .withOpacity(1.0)
-                                                        : (i%2==0)?borderColor.withAlpha(50): primaryColor.withAlpha(50),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            5.0),
+                            flex: 3,
+                            child: SizedBox(
+                                height: height * 0.7,
+                                child: Obx(
+                                  () => ListView.builder(
+                                    itemCount: storeRoomController
+                                        .ingredientList.length,
+                                    itemBuilder: (
+                                      context,
+                                      i,
+                                    ) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8.0),
+                                        child: InkWell(
+                                          onTap: () {
+                                            storeRoomController
+                                                    .ingredientList[i]
+                                                    .isChecked =
+                                                !storeRoomController
+                                                    .ingredientList[i]
+                                                    .isChecked!;
+                                            storeRoomController.ingredientList
+                                                .refresh();
+                                          },
+                                          child: Container(
+                                            width: width,
+                                            margin: EdgeInsets.only(bottom: 2),
+                                            decoration: BoxDecoration(
+                                              color: storeRoomController
+                                                      .ingredientList[i]
+                                                      .isChecked!
+                                                  ? primaryColor
+                                                      .withOpacity(1.0)
+                                                  : (i % 2 == 0)
+                                                      ? borderColor
+                                                          .withAlpha(50)
+                                                      : primaryColor
+                                                          .withAlpha(50),
+                                              borderRadius:
+                                                  BorderRadius.circular(5.0),
+                                            ),
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    storeRoomController
+                                                        .ingredientList[i]
+                                                        .ingredient!,
+                                                    style: TextStyle(
+                                                      fontFamily: "Lexand",
+                                                      fontSize: height * 0.015,
+                                                      color: storeRoomController
+                                                              .ingredientList[i]
+                                                              .isChecked!
+                                                          ? Colors.white
+                                                          : Colors.black,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
                                                   ),
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            10.0),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      children: [
-                                                        Text(
+                                                  InkWell(
+                                                    onTap: () {
+                                                      selectedUnit =
+                                                          storeRoomController
+                                                              .ingredientList[i]
+                                                              .measurement;
+                                                      isLooseChecked =
                                                           storeRoomController
                                                                   .ingredientList[
-                                                              i].ingredient!,
-                                                          style: TextStyle(
-                                                            fontFamily:
-                                                                "Lexand",
-                                                            fontSize:
-                                                                height * 0.015,
-                                                                color: storeRoomController
-                                                                .ingredientList[
-                                                            i].isChecked!?Colors.white:Colors.black,
-                                                            fontWeight:
-                                                                FontWeight.w700,
-                                                          ),
-                                                        ),
-                                                        InkWell(
-                                                          onTap: () {
-                                                            selectedUnit = storeRoomController.ingredientList[i].measurement;
-                                                            showDialog(
-                                                              context: context,
-                                                              builder:
-                                                                  (context) {
-                                                                return AlertDialog(
-                                                                  // insetPadding: EdgeInsets.all(0.0),
-                                                                  content:
+                                                                      i]
+                                                                  .isLoose ??
+                                                              false;
+                                                      isCartonChecked =
+                                                          storeRoomController
+                                                                  .ingredientList[
+                                                                      i]
+                                                                  .isCarton ??
+                                                              false;
+                                                      isBagChecked =
+                                                          storeRoomController
+                                                                  .ingredientList[
+                                                                      i]
+                                                                  .isBag ??
+                                                              false;
+
+                                                      // Initialize the controllers with existing values
+                                                      packageWeightController
+                                                          .text = storeRoomController
+                                                              .ingredientList[i]
+                                                              .packageWeight ??
+                                                          '';
+                                                      unitPriceController.text =
+                                                          storeRoomController
+                                                                  .ingredientList[
+                                                                      i]
+                                                                  .unitPrice ??
+                                                              '';
+                                                      storageLocationController
+                                                          .text = storeRoomController
+                                                              .ingredientList[i]
+                                                              .storageLocation ??
+                                                          '';
+                                                      ingredientsEditController
+                                                              .text =
+                                                          storeRoomController
+                                                                  .ingredientList[
+                                                                      i]
+                                                                  .ingredient ??
+                                                              '';
+
+                                                      showDialog(
+                                                        context: context,
+                                                        builder: (context) {
+                                                          return AlertDialog(
+                                                            content:
+                                                                StatefulBuilder(
+                                                              builder: (context,
+                                                                  setState) {
+                                                                return SingleChildScrollView(
+                                                                  child: Column(
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .start,
+                                                                    children: [
+                                                                      Text(
+                                                                        "Edit Ingredient",
+                                                                        style: TextStyle(
+                                                                            fontFamily:
+                                                                                "Lexand",
+                                                                            fontSize: height *
+                                                                                0.014,
+                                                                            fontWeight:
+                                                                                FontWeight.bold,
+                                                                            color: Colors.black),
+                                                                      ),
                                                                       SizedBox(
-                                                                    // width: double.maxFinite,
-                                                                    height: height *
-                                                                        0.25, // Ensure the AlertDialog content has a fixed width
-                                                                    child:
-                                                                        Column(
-                                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                                      children: [
-                                                                        Text(
-                                                                                "Edit Ingredients",
-                                                                                style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.014, fontWeight: FontWeight.bold,color: Colors.black),
-                                                                              ),
-                                                                        SizedBox(
-                                                                            height:20),
-                                                                        SizedBox(
                                                                           height:
-                                                                              height * 0.05,
-                                                                          child:
-                                                                              TextFormField(
-                                                                            style:
-                                                                                TextStyle(
-                                                                              fontFamily: "Lexand",
-                                                                              fontSize: height * 0.018,
-                                                                              fontWeight: FontWeight.w500,
-                                                                            ),
-                                                                            controller: ingredientsEditController =
-                                                                                TextEditingController(text: storeRoomController.ingredientList[i].ingredient),
-                                                                            decoration:
-                                                                                InputDecoration(
-                                                                              // suffixIcon: Padding(
-                                                                              //   padding: const EdgeInsets.all(8.0),
-                                                                              //   child: Image.asset(
-                                                                              //     "assets/user_icon.png",
-                                                                              //     height: height * 0.02,
-                                                                              //   ),
-                                                                              // ),
-                                                                              contentPadding: const EdgeInsets.only(left: 16.0),
-                                                                              label: Text(
-                                                                                "",
-                                                                                style: TextStyle(
-                                                                                  fontFamily: "Lexand",
-                                                                                  fontSize: height * 0.018,
-                                                                                  fontWeight: FontWeight.w300,
-                                                                                ),
-                                                                              ),
-                                                                              floatingLabelStyle: const TextStyle(
-                                                                                fontFamily: "Lexand",
-                                                                                fontWeight: FontWeight.w300,
-                                                                              ),
-                                                                              border: OutlineInputBorder(
-                                                                                borderRadius: BorderRadius.circular(15.0),
-                                                                                borderSide: const BorderSide(width: 1.5),
-                                                                              ),
-                                                                              disabledBorder: OutlineInputBorder(
-                                                                                borderRadius: BorderRadius.circular(30.0),
-                                                                                borderSide: const BorderSide(width: 1.5),
-                                                                              ),
-                                                                              enabledBorder: OutlineInputBorder(
-                                                                                borderRadius: BorderRadius.circular(30.0),
-                                                                                borderSide: BorderSide(
-                                                                                  color: borderColor.withOpacity(1.0),
-                                                                                  width: 1.5,
-                                                                                ),
-                                                                              ),
-                                                                              focusedBorder: OutlineInputBorder(
-                                                                                borderRadius: BorderRadius.circular(30.0),
-                                                                                borderSide: const BorderSide(width: 1.5),
-                                                                              ),
-                                                                            ),
-                                                                            onChanged:
-                                                                                (value) {
-                                                                              setState(() {});
-                                                                            },
+                                                                              20),
+                                                                      SizedBox(
+                                                                        height: height *
+                                                                            0.05,
+                                                                        child:
+                                                                            TextFormField(
+                                                                          style:
+                                                                              TextStyle(
+                                                                            fontFamily:
+                                                                                "Lexand",
+                                                                            fontSize:
+                                                                                height * 0.018,
+                                                                            fontWeight:
+                                                                                FontWeight.w500,
                                                                           ),
-                                                                        ),
-                                                                        SizedBox(
-                                                                            height:
-                                                                                height * 0.02),
-                                                                        Container(
-                                                                          height:
-                                                                              height * 0.05,
+                                                                          controller:
+                                                                              ingredientsEditController,
                                                                           decoration:
-                                                                              BoxDecoration(
-                                                                            borderRadius:
-                                                                                BorderRadius.circular(30.0),
-                                                                            border:
-                                                                                Border.all(
-                                                                              color: borderColor.withOpacity(1.0),
-                                                                              width: 1.5,
-                                                                            ),
-                                                                          ),
-                                                                          child:
-                                                                              DropdownButtonFormField<String>(
-                                                                            hint:
+                                                                              InputDecoration(
+                                                                            contentPadding:
+                                                                                const EdgeInsets.only(left: 16.0),
+                                                                            label:
                                                                                 Text(
-                                                                              "Select measurement",
+                                                                              "",
                                                                               style: TextStyle(
                                                                                 fontFamily: "Lexand",
                                                                                 fontSize: height * 0.018,
                                                                                 fontWeight: FontWeight.w300,
                                                                               ),
                                                                             ),
-                                                                            padding:
-                                                                                const EdgeInsets.only(left: 10, bottom: 5,right: 10),
-                                                                            value:
-                                                                                selectedUnit,
-                                                                                iconEnabledColor: primaryColor,
-                                                                            borderRadius:
-                                                                                BorderRadius.circular(30.0),
-                                                                            onChanged:
-                                                                                (String? newValue) {
-                                                                              setState(() {
-                                                                                selectedUnit = newValue!;
-                                                                              });
-                                                                            },
-                                                                            items:
-                                                                                <String>[
-                                                                              'kg',
-                                                                              'litre',
-                                                                              'unit'
-                                                                            ].map<DropdownMenuItem<String>>(
-                                                                              (String value) {
-                                                                                return DropdownMenuItem<String>(
-                                                                                  value: value,
-                                                                                  child: Padding(
-                                                                                    padding: EdgeInsets.symmetric(horizontal: 10),
-                                                                                    child: Text(
-                                                                                      value,
-                                                                                      style: TextStyle(
-                                                                                        fontFamily: "Lexand",
-                                                                                        fontSize: height * 0.018,
-                                                                                        fontWeight: FontWeight.w300,
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                );
-                                                                              },
-                                                                            ).toList(),
-                                                                            decoration:
-                                                                                InputDecoration(
-                                                                              border: InputBorder.none,
-                                                                              contentPadding: EdgeInsets.zero,
-                                                                              floatingLabelStyle: TextStyle(
-                                                                                fontFamily: "Lexand",
-                                                                                fontSize: height * 0.013,
-                                                                                fontWeight: FontWeight.w300,
+                                                                            floatingLabelStyle:
+                                                                                const TextStyle(
+                                                                              fontFamily: "Lexand",
+                                                                              fontWeight: FontWeight.w300,
+                                                                            ),
+                                                                            border:
+                                                                                OutlineInputBorder(
+                                                                              borderRadius: BorderRadius.circular(15.0),
+                                                                              borderSide: const BorderSide(width: 1.5),
+                                                                            ),
+                                                                            disabledBorder:
+                                                                                OutlineInputBorder(
+                                                                              borderRadius: BorderRadius.circular(30.0),
+                                                                              borderSide: const BorderSide(width: 1.5),
+                                                                            ),
+                                                                            enabledBorder:
+                                                                                OutlineInputBorder(
+                                                                              borderRadius: BorderRadius.circular(30.0),
+                                                                              borderSide: BorderSide(
+                                                                                color: borderColor.withOpacity(1.0),
+                                                                                width: 1.5,
                                                                               ),
                                                                             ),
-                                                                            // Aligns the dropdown value vertically centered within the container
-                                                                            alignment:
-                                                                                Alignment.topLeft,
+                                                                            focusedBorder:
+                                                                                OutlineInputBorder(
+                                                                              borderRadius: BorderRadius.circular(30.0),
+                                                                              borderSide: const BorderSide(width: 1.5),
+                                                                            ),
+                                                                          ),
+                                                                          onChanged:
+                                                                              (value) {
+                                                                            setState(() {});
+                                                                          },
+                                                                        ),
+                                                                      ),
+                                                                      SizedBox(
+                                                                          height:
+                                                                              height * 0.02),
+                                                                      Container(
+                                                                        height: height *
+                                                                            0.05,
+                                                                        decoration:
+                                                                            BoxDecoration(
+                                                                          borderRadius:
+                                                                              BorderRadius.circular(30.0),
+                                                                          border:
+                                                                              Border.all(
+                                                                            color:
+                                                                                borderColor.withOpacity(1.0),
+                                                                            width:
+                                                                                1.5,
                                                                           ),
                                                                         ),
-                                                                        SizedBox(
-                                                                          height:
-                                                                              height * 0.02,
+                                                                        child: DropdownButtonFormField<
+                                                                            String>(
+                                                                          hint:
+                                                                              Text(
+                                                                            "Select measurement",
+                                                                            style:
+                                                                                TextStyle(
+                                                                              fontFamily: "Lexand",
+                                                                              fontSize: height * 0.018,
+                                                                              fontWeight: FontWeight.w300,
+                                                                            ),
+                                                                          ),
+                                                                          padding: const EdgeInsets
+                                                                              .only(
+                                                                              left: 10,
+                                                                              bottom: 5,
+                                                                              right: 10),
+                                                                          value:
+                                                                              selectedUnit,
+                                                                          iconEnabledColor:
+                                                                              primaryColor,
+                                                                          borderRadius:
+                                                                              BorderRadius.circular(30.0),
+                                                                          onChanged:
+                                                                              (String? newValue) {
+                                                                            setState(() {
+                                                                              selectedUnit = newValue!;
+                                                                            });
+                                                                          },
+                                                                          items:
+                                                                              <String>[
+                                                                            'kg',
+                                                                            'litre',
+                                                                            'unit'
+                                                                          ].map<DropdownMenuItem<String>>((String value) {
+                                                                            return DropdownMenuItem<String>(
+                                                                              value: value,
+                                                                              child: Padding(
+                                                                                padding: EdgeInsets.symmetric(horizontal: 10),
+                                                                                child: Text(
+                                                                                  value,
+                                                                                  style: TextStyle(
+                                                                                    fontFamily: "Lexand",
+                                                                                    fontSize: height * 0.018,
+                                                                                    fontWeight: FontWeight.w300,
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                            );
+                                                                          }).toList(),
+                                                                          decoration:
+                                                                              InputDecoration(
+                                                                            border:
+                                                                                InputBorder.none,
+                                                                            contentPadding:
+                                                                                EdgeInsets.zero,
+                                                                            floatingLabelStyle:
+                                                                                TextStyle(
+                                                                              fontFamily: "Lexand",
+                                                                              fontSize: height * 0.013,
+                                                                              fontWeight: FontWeight.w300,
+                                                                            ),
+                                                                          ),
+                                                                          alignment:
+                                                                              Alignment.topLeft,
                                                                         ),
-                                                                        Row(
-                                                                          children: [
-                                                                            Expanded(
-                                                                              child: InkWell(
-                                                                                onTap: () {
-                                                                                  Navigator.pop(context);
+                                                                      ),
+                                                                      SizedBox(
+                                                                          height:
+                                                                              height * 0.02),
+                                                                      // Add TextFormField for packageWeight
+                                                                      SizedBox(
+                                                                        height: height *
+                                                                            0.05,
+                                                                        child:
+                                                                            TextFormField(
+                                                                          controller:
+                                                                              packageWeightController,
+                                                                          decoration:
+                                                                              InputDecoration(
+                                                                            hintText:
+                                                                                "Enter package weight",
+                                                                            contentPadding:
+                                                                                const EdgeInsets.only(left: 16.0),
+                                                                            border:
+                                                                                OutlineInputBorder(
+                                                                              borderRadius: BorderRadius.circular(15.0),
+                                                                              borderSide: const BorderSide(width: 1.5),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                      SizedBox(
+                                                                          height:
+                                                                              height * 0.02),
+                                                                      // Add TextFormField for unitPrice
+                                                                      SizedBox(
+                                                                        height: height *
+                                                                            0.05,
+                                                                        child:
+                                                                            TextFormField(
+                                                                          controller:
+                                                                              unitPriceController,
+                                                                          decoration:
+                                                                              InputDecoration(
+                                                                            hintText:
+                                                                                "Enter unit price",
+                                                                            contentPadding:
+                                                                                const EdgeInsets.only(left: 16.0),
+                                                                            border:
+                                                                                OutlineInputBorder(
+                                                                              borderRadius: BorderRadius.circular(15.0),
+                                                                              borderSide: const BorderSide(width: 1.5),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                      SizedBox(
+                                                                          height:
+                                                                              height * 0.02),
+                                                                      // Add TextFormField for storageLocation
+                                                                      SizedBox(
+                                                                        height: height *
+                                                                            0.05,
+                                                                        child:
+                                                                            TextFormField(
+                                                                          controller:
+                                                                              storageLocationController,
+                                                                          decoration:
+                                                                              InputDecoration(
+                                                                            hintText:
+                                                                                "Enter storage location",
+                                                                            contentPadding:
+                                                                                const EdgeInsets.only(left: 16.0),
+                                                                            border:
+                                                                                OutlineInputBorder(
+                                                                              borderRadius: BorderRadius.circular(15.0),
+                                                                              borderSide: const BorderSide(width: 1.5),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                      SizedBox(
+                                                                          height:
+                                                                              height * 0.02),
+                                                                      // Use Wrap instead of Row for checkboxes
+                                                                      Wrap(
+                                                                        spacing:
+                                                                            10.0,
+                                                                        children: [
+                                                                          Row(
+                                                                            mainAxisSize:
+                                                                                MainAxisSize.min,
+                                                                            children: [
+                                                                              Checkbox(
+                                                                                value: isLooseChecked,
+                                                                                onChanged: (bool? value) {
+                                                                                  setState(() {
+                                                                                    isLooseChecked = value ?? false;
+                                                                                  });
                                                                                 },
-                                                                                child: Padding(
-                                                                                  padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                                                                                  child: Container(
-                                                                                    height: height * 0.04,
-                                                                                    width: width,
-                                                                                    decoration: BoxDecoration(
-                                                                                      // color: buttonColor.withOpacity(1.0),
-                                                                                      border: Border.all(color: buttonColor.withOpacity(1.0)),
-                                                                                      borderRadius: BorderRadius.circular(15.0),
-                                                                                    ),
-                                                                                    child: Padding(
-                                                                                      padding: const EdgeInsets.all(8.0),
-                                                                                      child: Center(
-                                                                                        child: Text(
-                                                                                          "Cancel",
-                                                                                          style: TextStyle(color: buttonColor.withOpacity(1.0), fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                                                                                        ),
+                                                                              ),
+                                                                              Text("Loose"),
+                                                                            ],
+                                                                          ),
+                                                                          Row(
+                                                                            mainAxisSize:
+                                                                                MainAxisSize.min,
+                                                                            children: [
+                                                                              Checkbox(
+                                                                                value: isCartonChecked,
+                                                                                onChanged: (bool? value) {
+                                                                                  setState(() {
+                                                                                    isCartonChecked = value ?? false;
+                                                                                  });
+                                                                                },
+                                                                              ),
+                                                                              Text("Carton"),
+                                                                            ],
+                                                                          ),
+                                                                          Row(
+                                                                            mainAxisSize:
+                                                                                MainAxisSize.min,
+                                                                            children: [
+                                                                              Checkbox(
+                                                                                value: isBagChecked,
+                                                                                onChanged: (bool? value) {
+                                                                                  setState(() {
+                                                                                    isBagChecked = value ?? false;
+                                                                                  });
+                                                                                },
+                                                                              ),
+                                                                              Text("Bag"),
+                                                                            ],
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                      SizedBox(
+                                                                        height: height *
+                                                                            0.02,
+                                                                      ),
+                                                                      Row(
+                                                                        children: [
+                                                                          Expanded(
+                                                                            child:
+                                                                                InkWell(
+                                                                              onTap: () {
+                                                                                Navigator.pop(context);
+                                                                              },
+                                                                              child: Padding(
+                                                                                padding: EdgeInsets.symmetric(horizontal: width * 0.02),
+                                                                                child: Container(
+                                                                                  height: height * 0.04,
+                                                                                  width: width,
+                                                                                  decoration: BoxDecoration(
+                                                                                    border: Border.all(color: buttonColor.withOpacity(1.0)),
+                                                                                    borderRadius: BorderRadius.circular(15.0),
+                                                                                  ),
+                                                                                  child: Padding(
+                                                                                    padding: const EdgeInsets.all(8.0),
+                                                                                    child: Center(
+                                                                                      child: Text(
+                                                                                        "Cancel",
+                                                                                        style: TextStyle(color: buttonColor.withOpacity(1.0), fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
                                                                                       ),
                                                                                     ),
                                                                                   ),
                                                                                 ),
                                                                               ),
                                                                             ),
-                                                                            Expanded(
-                                                                              child: InkWell(
-                                                                                onTap: () async {
-                                                                                  await storeRoomController.storRoomingrediantEdit(
-                                                                                    ingredientsEditController.text,
-                                                                                    storeRoomController.ingredientList[i].ingredientId!,
-                                                                                    storeRoomController.ingredientList[i].isChecked!,
-                                                                                    selectedUnit,
-                                                                                  );
-                                                                                  setState(() {});
-                                                                                  Navigator.pop(context);
-                                                                                  await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                                                                                },
-                                                                                child: Padding(
-                                                                                  padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                                                                                  child: Container(
-                                                                                    height: height * 0.04,
-                                                                                    width: width,
-                                                                                    decoration: BoxDecoration(
-                                                                                      color: buttonColor.withOpacity(1.0),
-                                                                                      borderRadius: BorderRadius.circular(15.0),
-                                                                                    ),
-                                                                                    child: Padding(
-                                                                                      padding: const EdgeInsets.all(8.0),
-                                                                                      child: Center(
-                                                                                        child: Text(
-                                                                                          "Save",
-                                                                                          style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                                                                                        ),
+                                                                          ),
+                                                                          Expanded(
+                                                                            child:
+                                                                                InkWell(
+                                                                              onTap: () async {
+                                                                                if (selectedUnit == null || ingredientsEditController.text == '' || packageWeightController.text == '' || unitPriceController.text == '' || storageLocationController.text == '') {
+                                                                                  // Show an error message
+                                                                                  return;
+                                                                                }
+                                                                                await storeRoomController.storRoomingrediantEdit(
+                                                                                  ingredient: ingredientsEditController.text,
+                                                                                  ingredientId: storeRoomController.ingredientList[i].ingredientId!,
+                                                                                  isChecked: storeRoomController.ingredientList[i].isChecked!,
+                                                                                  measurement: selectedUnit,
+                                                                                  isLoose: isLooseChecked,
+                                                                                  isCarton: isCartonChecked,
+                                                                                  isBag: isBagChecked,
+                                                                                  packageWeight: packageWeightController.text,
+                                                                                  unitPrice: unitPriceController.text,
+                                                                                  storageLocation: storageLocationController.text,
+                                                                                );
+                                                                                setState(() {});
+                                                                                Navigator.pop(context);
+                                                                                await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
+                                                                              },
+                                                                              child: Padding(
+                                                                                padding: EdgeInsets.symmetric(horizontal: width * 0.02),
+                                                                                child: Container(
+                                                                                  height: height * 0.04,
+                                                                                  width: width,
+                                                                                  decoration: BoxDecoration(
+                                                                                    color: buttonColor.withOpacity(1.0),
+                                                                                    borderRadius: BorderRadius.circular(15.0),
+                                                                                  ),
+                                                                                  child: Padding(
+                                                                                    padding: const EdgeInsets.all(8.0),
+                                                                                    child: Center(
+                                                                                      child: Text(
+                                                                                        "Save",
+                                                                                        style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
                                                                                       ),
                                                                                     ),
                                                                                   ),
                                                                                 ),
                                                                               ),
-                                                                            )
-                                                                          ],
-                                                                        )
-                                                                      ],
-                                                                    ),
+                                                                            ),
+                                                                          )
+                                                                        ],
+                                                                      )
+                                                                    ],
                                                                   ),
                                                                 );
                                                               },
-                                                            );
-                                                          },
-                                                          child: Icon(
-                                                            Icons.edit,
-                                                            size: 20,
-                                                            color:storeRoomController
-                                                                .ingredientList[
-                                                            i].isChecked!?Colors.white:Colors.black,
-                                                          ),
-                                                        )
-                                                      ],
+                                                            ),
+                                                          );
+                                                        },
+                                                      );
+                                                    },
+                                                    child: Icon(
+                                                      Icons.edit,
+                                                      size: 20,
+                                                      color: storeRoomController
+                                                              .ingredientList[i]
+                                                              .isChecked!
+                                                          ? Colors.white
+                                                          : Colors.black,
                                                     ),
-                                                  ),
-                                                ),
+                                                  )
+                                                ],
                                               ),
-                                        );
-                                      },
-                                    ),
-                                  )
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                )
-                              
-                          // isVegetables
-                          //     ? Expanded(
-                          //         flex: 3,
-                          //         child: SizedBox(
-                          //           height: height * 0.7,
-                          //           child: ListView.builder(
-                          //             // shrinkWrap: true,
-                          //             itemCount: storeRoomController
-                          //                 .ingredientList.length,
-                          //             itemBuilder: (
-                          //               context,
-                          //               i,
-                          //             ) {
-                          //               return Padding(
-                          //                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          //                 child: InkWell(
-                          //                       onTap: () {
-                          //                         setState(() {
-                          //                           storeRoomController
-                          //                                       .ingredientList[
-                          //                                   i]["isChecked"] =
-                          //                               !storeRoomController
-                          //                                       .ingredientList[
-                          //                                   i]["isChecked"];
-                          //                         });
-
-                          //                         showDialog(
-                          //                           context: context,
-                          //                           builder: (context) {
-                          //                             return AlertDialog(
-                          //                               // insetPadding: EdgeInsets.all(0.0),
-                          //                               content: SizedBox(
-                          //                                 // width: double.maxFinite,
-                          //                                 height: height *
-                          //                                     0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                 child: Column(
-                          //                                   children: [
-                          //                                     Row(
-                          //                                       children: [
-                          //                                         InkWell(
-                          //                                           onTap: () {
-                          //                                             Navigator.pop(
-                          //                                                 context);
-                          //                                             // scaffoldkey.currentState!.openDrawer();
-                          //                                           },
-                          //                                           child: Icon(
-                          //                                             Icons
-                          //                                                 .arrow_back_ios_rounded,
-                          //                                             size: height *
-                          //                                                 0.039,
-                          //                                           ),
-                          //                                         ),
-                          //                                         Expanded(
-                          //                                           child: Text(
-                          //                                             "Pick your ingredients from the table.",
-                          //                                             style: TextStyle(
-                          //                                                 fontFamily:
-                          //                                                     "Lexand",
-                          //                                                 fontSize: height *
-                          //                                                     0.018,
-                          //                                                 fontWeight:
-                          //                                                     FontWeight.w500),
-                          //                                           ),
-                          //                                         ),
-                          //                                       ],
-                          //                                     ),
-                          //                                     SizedBox(
-                          //                                         height:
-                          //                                             height *
-                          //                                                 0.02),
-                          //                                     SizedBox(
-                          //                                       height: height *
-                          //                                           0.05,
-                          //                                       child:
-                          //                                           TextFormField(
-                          //                                         style:
-                          //                                             TextStyle(
-                          //                                           fontFamily:
-                          //                                               "Lexand",
-                          //                                           fontSize:
-                          //                                               height *
-                          //                                                   0.018,
-                          //                                           fontWeight:
-                          //                                               FontWeight
-                          //                                                   .w500,
-                          //                                         ),
-                          //                                         controller: ingredientsEditController =
-                          //                                             TextEditingController(
-                          //                                                 text: storeRoomController.ingredientList[i]
-                          //                                                     [
-                          //                                                     "ingredient"]),
-                          //                                         decoration:
-                          //                                             InputDecoration(
-                          //                                           // suffixIcon: Padding(
-                          //                                           //   padding: const EdgeInsets.all(8.0),
-                          //                                           //   child: Image.asset(
-                          //                                           //     "assets/user_icon.png",
-                          //                                           //     height: height * 0.02,
-                          //                                           //   ),
-                          //                                           // ),
-                          //                                           contentPadding:
-                          //                                               const EdgeInsets
-                          //                                                   .only(
-                          //                                                   left:
-                          //                                                       16.0),
-                          //                                           label: Text(
-                          //                                             "Ingredients",
-                          //                                             style:
-                          //                                                 TextStyle(
-                          //                                               fontFamily:
-                          //                                                   "Lexand",
-                          //                                               fontSize:
-                          //                                                   height *
-                          //                                                       0.018,
-                          //                                               fontWeight:
-                          //                                                   FontWeight.w300,
-                          //                                             ),
-                          //                                           ),
-                          //                                           floatingLabelStyle:
-                          //                                               const TextStyle(
-                          //                                             fontFamily:
-                          //                                                 "Lexand",
-                          //                                             fontWeight:
-                          //                                                 FontWeight
-                          //                                                     .w300,
-                          //                                           ),
-                          //                                           border:
-                          //                                               OutlineInputBorder(
-                          //                                             borderRadius:
-                          //                                                 BorderRadius.circular(
-                          //                                                     15.0),
-                          //                                             borderSide:
-                          //                                                 const BorderSide(
-                          //                                                     width: 1.5),
-                          //                                           ),
-                          //                                           disabledBorder:
-                          //                                               OutlineInputBorder(
-                          //                                             borderRadius:
-                          //                                                 BorderRadius.circular(
-                          //                                                     30.0),
-                          //                                             borderSide:
-                          //                                                 const BorderSide(
-                          //                                                     width: 1.5),
-                          //                                           ),
-                          //                                           enabledBorder:
-                          //                                               OutlineInputBorder(
-                          //                                             borderRadius:
-                          //                                                 BorderRadius.circular(
-                          //                                                     30.0),
-                          //                                             borderSide:
-                          //                                                 BorderSide(
-                          //                                               color: borderColor
-                          //                                                   .withOpacity(1.0),
-                          //                                               width:
-                          //                                                   1.5,
-                          //                                             ),
-                          //                                           ),
-                          //                                           focusedBorder:
-                          //                                               OutlineInputBorder(
-                          //                                             borderRadius:
-                          //                                                 BorderRadius.circular(
-                          //                                                     30.0),
-                          //                                             borderSide:
-                          //                                                 const BorderSide(
-                          //                                                     width: 1.5),
-                          //                                           ),
-                          //                                         ),
-                          //                                         onChanged:
-                          //                                             (value) {
-                          //                                           setState(
-                          //                                               () {});
-                          //                                         },
-                          //                                       ),
-                          //                                     ),
-                          //                                     SizedBox(
-                          //                                         height:
-                          //                                             height *
-                          //                                                 0.02),
-                          //                                     Container(
-                          //                                       height: height *
-                          //                                           0.05,
-                          //                                       decoration:
-                          //                                           BoxDecoration(
-                          //                                         borderRadius:
-                          //                                             BorderRadius
-                          //                                                 .circular(
-                          //                                                     30.0),
-                          //                                         border: Border
-                          //                                             .all(
-                          //                                           color: borderColor
-                          //                                               .withOpacity(
-                          //                                                   1.0),
-                          //                                           width: 1.5,
-                          //                                         ),
-                          //                                       ),
-                          //                                       child:
-                          //                                           DropdownButtonFormField<
-                          //                                               String>(
-                          //                                         hint: Text(
-                          //                                           "Select measurement",
-                          //                                           style:
-                          //                                               TextStyle(
-                          //                                             fontFamily:
-                          //                                                 "Lexand",
-                          //                                             fontSize:
-                          //                                                 height *
-                          //                                                     0.018,
-                          //                                             fontWeight:
-                          //                                                 FontWeight
-                          //                                                     .w300,
-                          //                                           ),
-                          //                                         ),
-                          //                                         padding:
-                          //                                             const EdgeInsets
-                          //                                                 .only(
-                          //                                                 left:
-                          //                                                     0,
-                          //                                                 bottom:
-                          //                                                     5),
-                          //                                         value:
-                          //                                             selectedUnit,
-                          //                                         borderRadius:
-                          //                                             BorderRadius
-                          //                                                 .circular(
-                          //                                                     30.0),
-                          //                                         onChanged:
-                          //                                             (String?
-                          //                                                 newValue) {
-                          //                                           setState(
-                          //                                               () {
-                          //                                             selectedUnit =
-                          //                                                 newValue!;
-                          //                                           });
-                          //                                         },
-                          //                                         items: <String>[
-                          //                                           'kg',
-                          //                                           'litre',
-                          //                                           'unit'
-                          //                                         ].map<
-                          //                                             DropdownMenuItem<
-                          //                                                 String>>(
-                          //                                           (String
-                          //                                               value) {
-                          //                                             return DropdownMenuItem<
-                          //                                                 String>(
-                          //                                               value:
-                          //                                                   value,
-                          //                                               child:
-                          //                                                   Padding(
-                          //                                                 padding:
-                          //                                                     EdgeInsets.symmetric(horizontal: width * 0.01),
-                          //                                                 child:
-                          //                                                     Text(
-                          //                                                   value,
-                          //                                                   style:
-                          //                                                       TextStyle(
-                          //                                                     fontFamily: "Lexand",
-                          //                                                     fontSize: height * 0.018,
-                          //                                                     fontWeight: FontWeight.w300,
-                          //                                                   ),
-                          //                                                 ),
-                          //                                               ),
-                          //                                             );
-                          //                                           },
-                          //                                         ).toList(),
-                          //                                         decoration:
-                          //                                             InputDecoration(
-                          //                                           border:
-                          //                                               InputBorder
-                          //                                                   .none,
-                          //                                           contentPadding:
-                          //                                               EdgeInsets
-                          //                                                   .zero,
-                          //                                           floatingLabelStyle:
-                          //                                               TextStyle(
-                          //                                             fontFamily:
-                          //                                                 "Lexand",
-                          //                                             fontSize:
-                          //                                                 height *
-                          //                                                     0.013,
-                          //                                             fontWeight:
-                          //                                                 FontWeight
-                          //                                                     .w300,
-                          //                                           ),
-                          //                                         ),
-                          //                                         // Aligns the dropdown value vertically centered within the container
-                          //                                         alignment:
-                          //                                             Alignment
-                          //                                                 .topCenter,
-                          //                                       ),
-                          //                                     ),
-                          //                                     SizedBox(
-                          //                                       height: height *
-                          //                                           0.02,
-                          //                                     ),
-                          //                                     Row(
-                          //                                       children: [
-                          //                                         Expanded(
-                          //                                           child:
-                          //                                               InkWell(
-                          //                                             onTap:
-                          //                                                 () {
-                          //                                               Navigator.pop(
-                          //                                                   context);
-                          //                                             },
-                          //                                             child:
-                          //                                                 Padding(
-                          //                                               padding:
-                          //                                                   EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                               child:
-                          //                                                   Container(
-                          //                                                 height:
-                          //                                                     height * 0.04,
-                          //                                                 width:
-                          //                                                     width,
-                          //                                                 decoration:
-                          //                                                     BoxDecoration(
-                          //                                                   color:
-                          //                                                       buttonColor.withOpacity(1.0),
-                          //                                                   borderRadius:
-                          //                                                       BorderRadius.circular(15.0),
-                          //                                                 ),
-                          //                                                 child:
-                          //                                                     Padding(
-                          //                                                   padding:
-                          //                                                       const EdgeInsets.all(8.0),
-                          //                                                   child:
-                          //                                                       Center(
-                          //                                                     child: Text(
-                          //                                                       "Cancel",
-                          //                                                       style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                     ),
-                          //                                                   ),
-                          //                                                 ),
-                          //                                               ),
-                          //                                             ),
-                          //                                           ),
-                          //                                         ),
-                          //                                         Expanded(
-                          //                                           child:
-                          //                                               InkWell(
-                          //                                             onTap:
-                          //                                                 () async {
-                          //                                               await storeRoomController
-                          //                                                   .storRoomingrediantEdit(
-                          //                                                 ingredientsEditController
-                          //                                                     .text,
-                          //                                                 storeRoomController.ingredientList[i]
-                          //                                                     [
-                          //                                                     "ingredientId"],
-                          //                                                 storeRoomController.ingredientList[i]
-                          //                                                     [
-                          //                                                     "isChecked"],
-                          //                                                 selectedUnit,
-                          //                                               );
-                          //                                               await storeRoomController
-                          //                                                   .stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                             },
-                          //                                             child:
-                          //                                                 Padding(
-                          //                                               padding:
-                          //                                                   EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                               child:
-                          //                                                   Container(
-                          //                                                 height:
-                          //                                                     height * 0.04,
-                          //                                                 width:
-                          //                                                     width,
-                          //                                                 decoration:
-                          //                                                     BoxDecoration(
-                          //                                                   color:
-                          //                                                       buttonColor.withOpacity(1.0),
-                          //                                                   borderRadius:
-                          //                                                       BorderRadius.circular(15.0),
-                          //                                                 ),
-                          //                                                 child:
-                          //                                                     Padding(
-                          //                                                   padding:
-                          //                                                       const EdgeInsets.all(8.0),
-                          //                                                   child:
-                          //                                                       Center(
-                          //                                                     child: Text(
-                          //                                                       "Save",
-                          //                                                       style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                     ),
-                          //                                                   ),
-                          //                                                 ),
-                          //                                               ),
-                          //                                             ),
-                          //                                           ),
-                          //                                         )
-                          //                                       ],
-                          //                                     )
-                          //                                   ],
-                          //                                 ),
-                          //                               ),
-                          //                             );
-                          //                           },
-                          //                         );
-                          //                       },
-                          //                       child: Container(
-                          //                         width: width,
-                          //                         // height: height*0.05,
-                          //                         decoration: BoxDecoration(
-                          //                           color: storeRoomController
-                          //                                       .ingredientList[
-                          //                                   i]["isChecked"]
-                          //                               ? primaryColor
-                          //                                   .withOpacity(1.0)
-                          //                               : Colors.white,
-                          //                           borderRadius:
-                          //                               BorderRadius.circular(
-                          //                                   10.0),
-                          //                         ),
-                          //                         child: Padding(
-                          //                           padding:
-                          //                               const EdgeInsets.all(
-                          //                                   8.0),
-                          //                           child: Row(
-                          //                             mainAxisAlignment:
-                          //                                 MainAxisAlignment
-                          //                                     .spaceBetween,
-                          //                             children: [
-                          //                               Text(
-                          //                                 storeRoomController
-                          //                                         .ingredientList[
-                          //                                     i]["ingredient"],
-                          //                                 style: TextStyle(
-                          //                                   fontFamily:
-                          //                                       "Lexand",
-                          //                                   fontSize:
-                          //                                       height * 0.013,
-                          //                                   fontWeight:
-                          //                                       FontWeight.w700,
-                          //                                 ),
-                          //                               ),
-                          //                               InkWell(
-                          //                                 onTap: () {
-                          //                                   showDialog(
-                          //                                     context: context,
-                          //                                     builder:
-                          //                                         (context) {
-                          //                                       return AlertDialog(
-                          //                                         // insetPadding: EdgeInsets.all(0.0),
-                          //                                         content:
-                          //                                             SizedBox(
-                          //                                           // width: double.maxFinite,
-                          //                                           height: height *
-                          //                                               0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                           child:
-                          //                                               Column(
-                          //                                             children: [
-                          //                                               Row(
-                          //                                                 children: [
-                          //                                                   InkWell(
-                          //                                                     onTap: () {
-                          //                                                       Navigator.pop(context);
-                          //                                                       // scaffoldkey.currentState!.openDrawer();
-                          //                                                     },
-                          //                                                     child: Icon(
-                          //                                                       Icons.arrow_back_ios_rounded,
-                          //                                                       size: height * 0.039,
-                          //                                                     ),
-                          //                                                   ),
-                          //                                                   Expanded(
-                          //                                                     child: Text(
-                          //                                                       "Pick your ingredients from the table.",
-                          //                                                       style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.018, fontWeight: FontWeight.w500),
-                          //                                                     ),
-                          //                                                   ),
-                          //                                                 ],
-                          //                                               ),
-                          //                                               SizedBox(
-                          //                                                   height:
-                          //                                                       height * 0.02),
-                          //                                               SizedBox(
-                          //                                                 height:
-                          //                                                     height * 0.05,
-                          //                                                 child:
-                          //                                                     TextFormField(
-                          //                                                   style:
-                          //                                                       TextStyle(
-                          //                                                     fontFamily: "Lexand",
-                          //                                                     fontSize: height * 0.018,
-                          //                                                     fontWeight: FontWeight.w500,
-                          //                                                   ),
-                          //                                                   controller: ingredientsEditController =
-                          //                                                       TextEditingController(text: storeRoomController.ingredientList[i]["ingredient"]),
-                          //                                                   decoration:
-                          //                                                       InputDecoration(
-                          //                                                     // suffixIcon: Padding(
-                          //                                                     //   padding: const EdgeInsets.all(8.0),
-                          //                                                     //   child: Image.asset(
-                          //                                                     //     "assets/user_icon.png",
-                          //                                                     //     height: height * 0.02,
-                          //                                                     //   ),
-                          //                                                     // ),
-                          //                                                     contentPadding: const EdgeInsets.only(left: 16.0),
-                          //                                                     label: Text(
-                          //                                                       "Ingredients",
-                          //                                                       style: TextStyle(
-                          //                                                         fontFamily: "Lexand",
-                          //                                                         fontSize: height * 0.018,
-                          //                                                         fontWeight: FontWeight.w300,
-                          //                                                       ),
-                          //                                                     ),
-                          //                                                     floatingLabelStyle: const TextStyle(
-                          //                                                       fontFamily: "Lexand",
-                          //                                                       fontWeight: FontWeight.w300,
-                          //                                                     ),
-                          //                                                     border: OutlineInputBorder(
-                          //                                                       borderRadius: BorderRadius.circular(15.0),
-                          //                                                       borderSide: const BorderSide(width: 1.5),
-                          //                                                     ),
-                          //                                                     disabledBorder: OutlineInputBorder(
-                          //                                                       borderRadius: BorderRadius.circular(30.0),
-                          //                                                       borderSide: const BorderSide(width: 1.5),
-                          //                                                     ),
-                          //                                                     enabledBorder: OutlineInputBorder(
-                          //                                                       borderRadius: BorderRadius.circular(30.0),
-                          //                                                       borderSide: BorderSide(
-                          //                                                         color: borderColor.withOpacity(1.0),
-                          //                                                         width: 1.5,
-                          //                                                       ),
-                          //                                                     ),
-                          //                                                     focusedBorder: OutlineInputBorder(
-                          //                                                       borderRadius: BorderRadius.circular(30.0),
-                          //                                                       borderSide: const BorderSide(width: 1.5),
-                          //                                                     ),
-                          //                                                   ),
-                          //                                                   onChanged:
-                          //                                                       (value) {
-                          //                                                     setState(() {});
-                          //                                                   },
-                          //                                                 ),
-                          //                                               ),
-                          //                                               SizedBox(
-                          //                                                   height:
-                          //                                                       height * 0.02),
-                          //                                               Container(
-                          //                                                 height:
-                          //                                                     height * 0.05,
-                          //                                                 decoration:
-                          //                                                     BoxDecoration(
-                          //                                                   borderRadius:
-                          //                                                       BorderRadius.circular(30.0),
-                          //                                                   border:
-                          //                                                       Border.all(
-                          //                                                     color: borderColor.withOpacity(1.0),
-                          //                                                     width: 1.5,
-                          //                                                   ),
-                          //                                                 ),
-                          //                                                 child:
-                          //                                                     DropdownButtonFormField<String>(
-                          //                                                   hint:
-                          //                                                       Text(
-                          //                                                     "Select measurement",
-                          //                                                     style: TextStyle(
-                          //                                                       fontFamily: "Lexand",
-                          //                                                       fontSize: height * 0.018,
-                          //                                                       fontWeight: FontWeight.w300,
-                          //                                                     ),
-                          //                                                   ),
-                          //                                                   padding:
-                          //                                                       const EdgeInsets.only(left: 10, bottom: 5),
-                          //                                                   value:
-                          //                                                       selectedUnit,
-                          //                                                   borderRadius:
-                          //                                                       BorderRadius.circular(30.0),
-                          //                                                   onChanged:
-                          //                                                       (String? newValue) {
-                          //                                                     setState(() {
-                          //                                                       selectedUnit = newValue!;
-                          //                                                     });
-                          //                                                   },
-                          //                                                   items:
-                          //                                                       <String>[
-                          //                                                     'kg',
-                          //                                                     'litre',
-                          //                                                     'unit'
-                          //                                                   ].map<DropdownMenuItem<String>>(
-                          //                                                     (String value) {
-                          //                                                       return DropdownMenuItem<String>(
-                          //                                                         value: value,
-                          //                                                         child: Padding(
-                          //                                                           padding: EdgeInsets.symmetric(horizontal: width * 0.04),
-                          //                                                           child: Text(
-                          //                                                             value,
-                          //                                                             style: TextStyle(
-                          //                                                               fontFamily: "Lexand",
-                          //                                                               fontSize: height * 0.018,
-                          //                                                               fontWeight: FontWeight.w300,
-                          //                                                             ),
-                          //                                                           ),
-                          //                                                         ),
-                          //                                                       );
-                          //                                                     },
-                          //                                                   ).toList(),
-                          //                                                   decoration:
-                          //                                                       InputDecoration(
-                          //                                                     border: InputBorder.none,
-                          //                                                     contentPadding: EdgeInsets.zero,
-                          //                                                     floatingLabelStyle: TextStyle(
-                          //                                                       fontFamily: "Lexand",
-                          //                                                       fontSize: height * 0.013,
-                          //                                                       fontWeight: FontWeight.w300,
-                          //                                                     ),
-                          //                                                   ),
-                          //                                                   // Aligns the dropdown value vertically centered within the container
-                          //                                                   alignment:
-                          //                                                       Alignment.topCenter,
-                          //                                                 ),
-                          //                                               ),
-                          //                                               SizedBox(
-                          //                                                 height:
-                          //                                                     height * 0.02,
-                          //                                               ),
-                          //                                               Row(
-                          //                                                 children: [
-                          //                                                   Expanded(
-                          //                                                     child: InkWell(
-                          //                                                       onTap: () {
-                          //                                                         Navigator.pop(context);
-                          //                                                       },
-                          //                                                       child: Padding(
-                          //                                                         padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                         child: Container(
-                          //                                                           height: height * 0.04,
-                          //                                                           width: width,
-                          //                                                           decoration: BoxDecoration(
-                          //                                                             color: buttonColor.withOpacity(1.0),
-                          //                                                             borderRadius: BorderRadius.circular(15.0),
-                          //                                                           ),
-                          //                                                           child: Padding(
-                          //                                                             padding: const EdgeInsets.all(8.0),
-                          //                                                             child: Center(
-                          //                                                               child: Text(
-                          //                                                                 "Cancel",
-                          //                                                                 style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                               ),
-                          //                                                             ),
-                          //                                                           ),
-                          //                                                         ),
-                          //                                                       ),
-                          //                                                     ),
-                          //                                                   ),
-                          //                                                   Expanded(
-                          //                                                     child: InkWell(
-                          //                                                       onTap: () async {
-                          //                                                         await storeRoomController.storRoomingrediantEdit(
-                          //                                                           ingredientsEditController.text,
-                          //                                                           storeRoomController.ingredientList[i]["ingredientId"],
-                          //                                                           storeRoomController.ingredientList[i]["isChecked"],
-                          //                                                           selectedUnit,
-                          //                                                         );
-                          //                                                         setState(() {});
-                          //                                                         Navigator.pop(context);
-                          //                                                         await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                                       },
-                          //                                                       child: Padding(
-                          //                                                         padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                         child: Container(
-                          //                                                           height: height * 0.04,
-                          //                                                           width: width,
-                          //                                                           decoration: BoxDecoration(
-                          //                                                             color: buttonColor.withOpacity(1.0),
-                          //                                                             borderRadius: BorderRadius.circular(15.0),
-                          //                                                           ),
-                          //                                                           child: Padding(
-                          //                                                             padding: const EdgeInsets.all(8.0),
-                          //                                                             child: Center(
-                          //                                                               child: Text(
-                          //                                                                 "Save",
-                          //                                                                 style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                               ),
-                          //                                                             ),
-                          //                                                           ),
-                          //                                                         ),
-                          //                                                       ),
-                          //                                                     ),
-                          //                                                   )
-                          //                                                 ],
-                          //                                               )
-                          //                                             ],
-                          //                                           ),
-                          //                                         ),
-                          //                                       );
-                          //                                     },
-                          //                                   );
-                          //                                 },
-                          //                                 child: const Icon(
-                          //                                   Icons.edit,
-                          //                                   size: 20,
-                          //                                   color: Colors.black,
-                          //                                 ),
-                          //                               )
-                          //                             ],
-                          //                           ),
-                          //                         ),
-                          //                       ),
-                          //                     ),
-                          //               );
-                          //             },
-                          //           ),
-                          //         ),
-                          //       )
-                          //     : isPowder
-                          //         ? Expanded(
-                          //             flex: 3,
-                          //             child: SingleChildScrollView(
-                          //               child: SizedBox(
-                          //                 height: height * 0.7,
-                          //                 child: ListView.builder(
-                          //                   // shrinkWrap: true,
-                          //                   itemCount: storeRoomController
-                          //                       .ingredientsPowedersList.length,
-                          //                   itemBuilder: (
-                          //                     context,
-                          //                     i,
-                          //                   ) {
-                          //                     return Padding(
-                          //                       padding:
-                          //                           const EdgeInsets.all(8.0),
-                          //                       child: Column(
-                          //                         crossAxisAlignment:
-                          //                             CrossAxisAlignment.start,
-                          //                         children: [
-                          //                           InkWell(
-                          //                             onTap: () {
-                          //                               setState(() {});
-                          //                             },
-                          //                             child: Container(
-                          //                               width: width,
-                          //                               // height: height*0.05,
-                          //                               decoration:
-                          //                                   BoxDecoration(
-                          //                                 color: primaryColor
-                          //                                     .withOpacity(1.0),
-                          //                                 borderRadius:
-                          //                                     BorderRadius
-                          //                                         .circular(
-                          //                                             10.0),
-                          //                               ),
-                          //                               child: Padding(
-                          //                                 padding:
-                          //                                     const EdgeInsets
-                          //                                         .all(8.0),
-                          //                                 child: Row(
-                          //                                   mainAxisAlignment:
-                          //                                       MainAxisAlignment
-                          //                                           .spaceBetween,
-                          //                                   children: [
-                          //                                     Text(
-                          //                                       storeRoomController
-                          //                                               .ingredientsPowedersList[i]
-                          //                                           [
-                          //                                           "ingredient"],
-                          //                                       style:
-                          //                                           TextStyle(
-                          //                                         fontFamily:
-                          //                                             "Lexand",
-                          //                                         fontSize:
-                          //                                             height *
-                          //                                                 0.013,
-                          //                                         fontWeight:
-                          //                                             FontWeight
-                          //                                                 .w700,
-                          //                                       ),
-                          //                                     ),
-                          //                                     InkWell(
-                          //                                       onTap: () {
-                          //                                         showDialog(
-                          //                                           context:
-                          //                                               context,
-                          //                                           builder:
-                          //                                               (context) {
-                          //                                             return AlertDialog(
-                          //                                               // insetPadding: EdgeInsets.all(0.0),
-                          //                                               content:
-                          //                                                   SizedBox(
-                          //                                                 // width: double.maxFinite,
-                          //                                                 height:
-                          //                                                     height * 0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                                 child:
-                          //                                                     Column(
-                          //                                                   children: [
-                          //                                                     Row(
-                          //                                                       children: [
-                          //                                                         InkWell(
-                          //                                                           onTap: () {
-                          //                                                             Navigator.pop(context);
-                          //                                                             // scaffoldkey.currentState!.openDrawer();
-                          //                                                           },
-                          //                                                           child: Icon(
-                          //                                                             Icons.arrow_back_ios_rounded,
-                          //                                                             size: height * 0.039,
-                          //                                                           ),
-                          //                                                         ),
-                          //                                                         Expanded(
-                          //                                                           child: Text(
-                          //                                                             "Pick your ingredients from the table.",
-                          //                                                             style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.018, fontWeight: FontWeight.w500),
-                          //                                                           ),
-                          //                                                         ),
-                          //                                                       ],
-                          //                                                     ),
-                          //                                                     SizedBox(height: height * 0.02),
-                          //                                                     SizedBox(
-                          //                                                       height: height * 0.05,
-                          //                                                       child: TextFormField(
-                          //                                                         style: TextStyle(
-                          //                                                           fontFamily: "Lexand",
-                          //                                                           fontSize: height * 0.018,
-                          //                                                           fontWeight: FontWeight.w500,
-                          //                                                         ),
-                          //                                                         controller: ingredientsEditController = TextEditingController(text: storeRoomController.ingredientsPowedersList[i]["ingredient"]),
-                          //                                                         decoration: InputDecoration(
-                          //                                                           // suffixIcon: Padding(
-                          //                                                           //   padding: const EdgeInsets.all(8.0),
-                          //                                                           //   child: Image.asset(
-                          //                                                           //     "assets/user_icon.png",
-                          //                                                           //     height: height * 0.02,
-                          //                                                           //   ),
-                          //                                                           // ),
-                          //                                                           contentPadding: const EdgeInsets.only(left: 16.0),
-                          //                                                           label: Text(
-                          //                                                             "Ingredients",
-                          //                                                             style: TextStyle(
-                          //                                                               fontFamily: "Lexand",
-                          //                                                               fontSize: height * 0.018,
-                          //                                                               fontWeight: FontWeight.w300,
-                          //                                                             ),
-                          //                                                           ),
-                          //                                                           floatingLabelStyle: const TextStyle(
-                          //                                                             fontFamily: "Lexand",
-                          //                                                             fontWeight: FontWeight.w300,
-                          //                                                           ),
-                          //                                                           border: OutlineInputBorder(
-                          //                                                             borderRadius: BorderRadius.circular(15.0),
-                          //                                                             borderSide: const BorderSide(width: 1.5),
-                          //                                                           ),
-                          //                                                           disabledBorder: OutlineInputBorder(
-                          //                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                             borderSide: const BorderSide(width: 1.5),
-                          //                                                           ),
-                          //                                                           enabledBorder: OutlineInputBorder(
-                          //                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                             borderSide: BorderSide(
-                          //                                                               color: borderColor.withOpacity(1.0),
-                          //                                                               width: 1.5,
-                          //                                                             ),
-                          //                                                           ),
-                          //                                                           focusedBorder: OutlineInputBorder(
-                          //                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                             borderSide: const BorderSide(width: 1.5),
-                          //                                                           ),
-                          //                                                         ),
-                          //                                                         onChanged: (value) {
-                          //                                                           setState(() {});
-                          //                                                         },
-                          //                                                       ),
-                          //                                                     ),
-                          //                                                     SizedBox(height: height * 0.02),
-                          //                                                     Container(
-                          //                                                       height: height * 0.05,
-                          //                                                       decoration: BoxDecoration(
-                          //                                                         borderRadius: BorderRadius.circular(30.0),
-                          //                                                         border: Border.all(
-                          //                                                           color: borderColor.withOpacity(1.0),
-                          //                                                           width: 1.5,
-                          //                                                         ),
-                          //                                                       ),
-                          //                                                       child: DropdownButtonFormField<String>(
-                          //                                                         hint: Text(
-                          //                                                           "Select measurement",
-                          //                                                           style: TextStyle(
-                          //                                                             fontFamily: "Lexand",
-                          //                                                             fontSize: height * 0.018,
-                          //                                                             fontWeight: FontWeight.w300,
-                          //                                                           ),
-                          //                                                         ),
-                          //                                                         padding: const EdgeInsets.only(left: 10, bottom: 5),
-                          //                                                         value: selectedUnit,
-                          //                                                         borderRadius: BorderRadius.circular(30.0),
-                          //                                                         onChanged: (String? newValue) {
-                          //                                                           setState(() {
-                          //                                                             selectedUnit = newValue!;
-                          //                                                           });
-                          //                                                         },
-                          //                                                         items: <String>[
-                          //                                                           'kg',
-                          //                                                           'litre',
-                          //                                                           'unit'
-                          //                                                         ].map<DropdownMenuItem<String>>(
-                          //                                                           (String value) {
-                          //                                                             return DropdownMenuItem<String>(
-                          //                                                               value: value,
-                          //                                                               child: Padding(
-                          //                                                                 padding: EdgeInsets.symmetric(horizontal: width * 0.04),
-                          //                                                                 child: Text(
-                          //                                                                   value,
-                          //                                                                   style: TextStyle(
-                          //                                                                     fontFamily: "Lexand",
-                          //                                                                     fontSize: height * 0.018,
-                          //                                                                     fontWeight: FontWeight.w300,
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                               ),
-                          //                                                             );
-                          //                                                           },
-                          //                                                         ).toList(),
-                          //                                                         decoration: InputDecoration(
-                          //                                                           border: InputBorder.none,
-                          //                                                           contentPadding: EdgeInsets.zero,
-                          //                                                           floatingLabelStyle: TextStyle(
-                          //                                                             fontFamily: "Lexand",
-                          //                                                             fontSize: height * 0.013,
-                          //                                                             fontWeight: FontWeight.w300,
-                          //                                                           ),
-                          //                                                         ),
-                          //                                                         // Aligns the dropdown value vertically centered within the container
-                          //                                                         alignment: Alignment.topCenter,
-                          //                                                       ),
-                          //                                                     ),
-                          //                                                     SizedBox(
-                          //                                                       height: height * 0.02,
-                          //                                                     ),
-                          //                                                     Row(
-                          //                                                       children: [
-                          //                                                         Expanded(
-                          //                                                           child: InkWell(
-                          //                                                             onTap: () {
-                          //                                                               Navigator.pop(context);
-                          //                                                             },
-                          //                                                             child: Padding(
-                          //                                                               padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                               child: Container(
-                          //                                                                 height: height * 0.04,
-                          //                                                                 width: width,
-                          //                                                                 decoration: BoxDecoration(
-                          //                                                                   color: buttonColor.withOpacity(1.0),
-                          //                                                                   borderRadius: BorderRadius.circular(15.0),
-                          //                                                                 ),
-                          //                                                                 child: Padding(
-                          //                                                                   padding: const EdgeInsets.all(8.0),
-                          //                                                                   child: Center(
-                          //                                                                     child: Text(
-                          //                                                                       "Cancel",
-                          //                                                                       style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                               ),
-                          //                                                             ),
-                          //                                                           ),
-                          //                                                         ),
-                          //                                                         Expanded(
-                          //                                                           child: InkWell(
-                          //                                                             onTap: () async {
-                          //                                                               await storeRoomController.storRoomingrediantEdit(
-                          //                                                                 ingredientsEditController.text,
-                          //                                                                 storeRoomController.ingredientsPowedersList[i]["ingredientId"],
-                          //                                                                 storeRoomController.ingredientsPowedersList[i]["isChecked"],
-                          //                                                                 selectedUnit,
-                          //                                                               );
-                          //                                                               setState(() {});
-                          //                                                               Navigator.pop(context);
-                          //                                                               await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                                             },
-                          //                                                             child: Padding(
-                          //                                                               padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                               child: Container(
-                          //                                                                 height: height * 0.04,
-                          //                                                                 width: width,
-                          //                                                                 decoration: BoxDecoration(
-                          //                                                                   color: buttonColor.withOpacity(1.0),
-                          //                                                                   borderRadius: BorderRadius.circular(15.0),
-                          //                                                                 ),
-                          //                                                                 child: Padding(
-                          //                                                                   padding: const EdgeInsets.all(8.0),
-                          //                                                                   child: Center(
-                          //                                                                     child: Text(
-                          //                                                                       "Save",
-                          //                                                                       style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                               ),
-                          //                                                             ),
-                          //                                                           ),
-                          //                                                         )
-                          //                                                       ],
-                          //                                                     )
-                          //                                                   ],
-                          //                                                 ),
-                          //                                               ),
-                          //                                             );
-                          //                                           },
-                          //                                         );
-                          //                                       },
-                          //                                       child:
-                          //                                           const Icon(
-                          //                                         Icons.edit,
-                          //                                         size: 20,
-                          //                                         color: Colors
-                          //                                             .black,
-                          //                                       ),
-                          //                                     )
-                          //                                   ],
-                          //                                 ),
-                          //                               ),
-                          //                             ),
-                          //                           ),
-                          //                           SizedBox(
-                          //                               height: height * 0.01),
-                          //                         ],
-                          //                       ),
-                          //                     );
-                          //                   },
-                          //                 ),
-                          //               ),
-                          //             ),
-                          //           )
-                          //         : isSpices
-                          //             ? Expanded(
-                          //                 flex: 3,
-                          //                 child: SingleChildScrollView(
-                          //                   child: SizedBox(
-                          //                     height: height * 0.7,
-                          //                     child: ListView.builder(
-                          //                       // shrinkWrap: true,
-                          //                       itemCount: storeRoomController
-                          //                           .ingredientsSpicesList
-                          //                           .length,
-                          //                       itemBuilder: (
-                          //                         context,
-                          //                         i,
-                          //                       ) {
-                          //                         return Padding(
-                          //                           padding:
-                          //                               const EdgeInsets.all(
-                          //                                   8.0),
-                          //                           child: Column(
-                          //                             crossAxisAlignment:
-                          //                                 CrossAxisAlignment
-                          //                                     .start,
-                          //                             children: [
-                          //                               InkWell(
-                          //                                 onTap: () {
-                          //                                   setState(() {});
-                          //                                 },
-                          //                                 child: Container(
-                          //                                   width: width,
-                          //                                   // height: height*0.05,
-                          //                                   decoration:
-                          //                                       BoxDecoration(
-                          //                                     color: primaryColor
-                          //                                         .withOpacity(
-                          //                                             1.0),
-                          //                                     borderRadius:
-                          //                                         BorderRadius
-                          //                                             .circular(
-                          //                                                 10.0),
-                          //                                   ),
-                          //                                   child: Padding(
-                          //                                     padding:
-                          //                                         const EdgeInsets
-                          //                                             .all(8.0),
-                          //                                     child: Row(
-                          //                                       mainAxisAlignment:
-                          //                                           MainAxisAlignment
-                          //                                               .spaceBetween,
-                          //                                       children: [
-                          //                                         Text(
-                          //                                           storeRoomController
-                          //                                                   .ingredientsSpicesList[i]
-                          //                                               [
-                          //                                               "ingredient"],
-                          //                                           style:
-                          //                                               TextStyle(
-                          //                                             fontFamily:
-                          //                                                 "Lexand",
-                          //                                             fontSize:
-                          //                                                 height *
-                          //                                                     0.013,
-                          //                                             fontWeight:
-                          //                                                 FontWeight
-                          //                                                     .w700,
-                          //                                           ),
-                          //                                         ),
-                          //                                         InkWell(
-                          //                                           onTap: () {
-                          //                                             showDialog(
-                          //                                               context:
-                          //                                                   context,
-                          //                                               builder:
-                          //                                                   (context) {
-                          //                                                 return AlertDialog(
-                          //                                                   // insetPadding: EdgeInsets.all(0.0),
-                          //                                                   content:
-                          //                                                       SizedBox(
-                          //                                                     // width: double.maxFinite,
-                          //                                                     height: height * 0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                                     child: Column(
-                          //                                                       children: [
-                          //                                                         Row(
-                          //                                                           children: [
-                          //                                                             InkWell(
-                          //                                                               onTap: () {
-                          //                                                                 Navigator.pop(context);
-                          //                                                                 // scaffoldkey.currentState!.openDrawer();
-                          //                                                               },
-                          //                                                               child: Icon(
-                          //                                                                 Icons.arrow_back_ios_rounded,
-                          //                                                                 size: height * 0.039,
-                          //                                                               ),
-                          //                                                             ),
-                          //                                                             Expanded(
-                          //                                                               child: Text(
-                          //                                                                 "Pick your ingredients from the table.",
-                          //                                                                 style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.018, fontWeight: FontWeight.w500),
-                          //                                                               ),
-                          //                                                             ),
-                          //                                                           ],
-                          //                                                         ),
-                          //                                                         SizedBox(height: height * 0.02),
-                          //                                                         SizedBox(
-                          //                                                           height: height * 0.05,
-                          //                                                           child: TextFormField(
-                          //                                                             style: TextStyle(
-                          //                                                               fontFamily: "Lexand",
-                          //                                                               fontSize: height * 0.018,
-                          //                                                               fontWeight: FontWeight.w500,
-                          //                                                             ),
-                          //                                                             controller: ingredientsEditController = TextEditingController(text: storeRoomController.ingredientsSpicesList[i]["ingredient"]),
-                          //                                                             decoration: InputDecoration(
-                          //                                                               // suffixIcon: Padding(
-                          //                                                               //   padding: const EdgeInsets.all(8.0),
-                          //                                                               //   child: Image.asset(
-                          //                                                               //     "assets/user_icon.png",
-                          //                                                               //     height: height * 0.02,
-                          //                                                               //   ),
-                          //                                                               // ),
-                          //                                                               contentPadding: const EdgeInsets.only(left: 16.0),
-                          //                                                               label: Text(
-                          //                                                                 "Ingredients",
-                          //                                                                 style: TextStyle(
-                          //                                                                   fontFamily: "Lexand",
-                          //                                                                   fontSize: height * 0.018,
-                          //                                                                   fontWeight: FontWeight.w300,
-                          //                                                                 ),
-                          //                                                               ),
-                          //                                                               floatingLabelStyle: const TextStyle(
-                          //                                                                 fontFamily: "Lexand",
-                          //                                                                 fontWeight: FontWeight.w300,
-                          //                                                               ),
-                          //                                                               border: OutlineInputBorder(
-                          //                                                                 borderRadius: BorderRadius.circular(15.0),
-                          //                                                                 borderSide: const BorderSide(width: 1.5),
-                          //                                                               ),
-                          //                                                               disabledBorder: OutlineInputBorder(
-                          //                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                 borderSide: const BorderSide(width: 1.5),
-                          //                                                               ),
-                          //                                                               enabledBorder: OutlineInputBorder(
-                          //                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                 borderSide: BorderSide(
-                          //                                                                   color: borderColor.withOpacity(1.0),
-                          //                                                                   width: 1.5,
-                          //                                                                 ),
-                          //                                                               ),
-                          //                                                               focusedBorder: OutlineInputBorder(
-                          //                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                 borderSide: const BorderSide(width: 1.5),
-                          //                                                               ),
-                          //                                                             ),
-                          //                                                             onChanged: (value) {
-                          //                                                               setState(() {});
-                          //                                                             },
-                          //                                                           ),
-                          //                                                         ),
-                          //                                                         SizedBox(height: height * 0.02),
-                          //                                                         Container(
-                          //                                                           height: height * 0.05,
-                          //                                                           decoration: BoxDecoration(
-                          //                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                             border: Border.all(
-                          //                                                               color: borderColor.withOpacity(1.0),
-                          //                                                               width: 1.5,
-                          //                                                             ),
-                          //                                                           ),
-                          //                                                           child: DropdownButtonFormField<String>(
-                          //                                                             hint: Text(
-                          //                                                               "Select measurement",
-                          //                                                               style: TextStyle(
-                          //                                                                 fontFamily: "Lexand",
-                          //                                                                 fontSize: height * 0.018,
-                          //                                                                 fontWeight: FontWeight.w300,
-                          //                                                               ),
-                          //                                                             ),
-                          //                                                             padding: const EdgeInsets.only(left: 10, bottom: 5),
-                          //                                                             value: selectedUnit,
-                          //                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                             onChanged: (String? newValue) {
-                          //                                                               setState(() {
-                          //                                                                 selectedUnit = newValue!;
-                          //                                                               });
-                          //                                                             },
-                          //                                                             items: <String>[
-                          //                                                               'kg',
-                          //                                                               'litre',
-                          //                                                               'unit'
-                          //                                                             ].map<DropdownMenuItem<String>>(
-                          //                                                               (String value) {
-                          //                                                                 return DropdownMenuItem<String>(
-                          //                                                                   value: value,
-                          //                                                                   child: Padding(
-                          //                                                                     padding: EdgeInsets.symmetric(horizontal: width * 0.04),
-                          //                                                                     child: Text(
-                          //                                                                       value,
-                          //                                                                       style: TextStyle(
-                          //                                                                         fontFamily: "Lexand",
-                          //                                                                         fontSize: height * 0.018,
-                          //                                                                         fontWeight: FontWeight.w300,
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                 );
-                          //                                                               },
-                          //                                                             ).toList(),
-                          //                                                             decoration: InputDecoration(
-                          //                                                               border: InputBorder.none,
-                          //                                                               contentPadding: EdgeInsets.zero,
-                          //                                                               floatingLabelStyle: TextStyle(
-                          //                                                                 fontFamily: "Lexand",
-                          //                                                                 fontSize: height * 0.013,
-                          //                                                                 fontWeight: FontWeight.w300,
-                          //                                                               ),
-                          //                                                             ),
-                          //                                                             // Aligns the dropdown value vertically centered within the container
-                          //                                                             alignment: Alignment.topCenter,
-                          //                                                           ),
-                          //                                                         ),
-                          //                                                         SizedBox(
-                          //                                                           height: height * 0.02,
-                          //                                                         ),
-                          //                                                         Row(
-                          //                                                           children: [
-                          //                                                             Expanded(
-                          //                                                               child: InkWell(
-                          //                                                                 onTap: () {
-                          //                                                                   Navigator.pop(context);
-                          //                                                                 },
-                          //                                                                 child: Padding(
-                          //                                                                   padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                   child: Container(
-                          //                                                                     height: height * 0.04,
-                          //                                                                     width: width,
-                          //                                                                     decoration: BoxDecoration(
-                          //                                                                       color: buttonColor.withOpacity(1.0),
-                          //                                                                       borderRadius: BorderRadius.circular(15.0),
-                          //                                                                     ),
-                          //                                                                     child: Padding(
-                          //                                                                       padding: const EdgeInsets.all(8.0),
-                          //                                                                       child: Center(
-                          //                                                                         child: Text(
-                          //                                                                           "Cancel",
-                          //                                                                           style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                         ),
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                               ),
-                          //                                                             ),
-                          //                                                             Expanded(
-                          //                                                               child: InkWell(
-                          //                                                                 onTap: () async {
-                          //                                                                   var ingredientId = storeRoomController.ingredientsSpicesList[i]["ingredientId"];
-                          //                                                                   await storeRoomController.storRoomingrediantEdit(
-                          //                                                                     ingredientsEditController.text,
-                          //                                                                     ingredientId,
-                          //                                                                     storeRoomController.ingredientsSpicesList[i]["isChecked"],
-                          //                                                                     selectedUnit,
-                          //                                                                   );
-                          //                                                                   setState(() {});
-                          //                                                                   Navigator.pop(context);
-                          //                                                                   await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                                                 },
-                          //                                                                 child: Padding(
-                          //                                                                   padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                   child: Container(
-                          //                                                                     height: height * 0.04,
-                          //                                                                     width: width,
-                          //                                                                     decoration: BoxDecoration(
-                          //                                                                       color: buttonColor.withOpacity(1.0),
-                          //                                                                       borderRadius: BorderRadius.circular(15.0),
-                          //                                                                     ),
-                          //                                                                     child: Padding(
-                          //                                                                       padding: const EdgeInsets.all(8.0),
-                          //                                                                       child: Center(
-                          //                                                                         child: Text(
-                          //                                                                           "Save",
-                          //                                                                           style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                         ),
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                               ),
-                          //                                                             )
-                          //                                                           ],
-                          //                                                         )
-                          //                                                       ],
-                          //                                                     ),
-                          //                                                   ),
-                          //                                                 );
-                          //                                               },
-                          //                                             );
-                          //                                           },
-                          //                                           child:
-                          //                                               const Icon(
-                          //                                             Icons
-                          //                                                 .edit,
-                          //                                             size: 20,
-                          //                                             color: Colors
-                          //                                                 .black,
-                          //                                           ),
-                          //                                         )
-                          //                                       ],
-                          //                                     ),
-                          //                                   ),
-                          //                                 ),
-                          //                               ),
-                          //                               SizedBox(
-                          //                                   height:
-                          //                                       height * 0.01),
-                          //                             ],
-                          //                           ),
-                          //                         );
-                          //                       },
-                          //                     ),
-                          //                   ),
-                          //                 ),
-                          //               )
-                          //             : isLentils
-                          //                 ? Expanded(
-                          //                     flex: 3,
-                          //                     child: SingleChildScrollView(
-                          //                       child: SizedBox(
-                          //                         height: height * 0.7,
-                          //                         child: ListView.builder(
-                          //                           // shrinkWrap: true,
-                          //                           itemCount: storeRoomController
-                          //                               .ingredientsLentilList
-                          //                               .length,
-                          //                           itemBuilder: (
-                          //                             context,
-                          //                             i,
-                          //                           ) {
-                          //                             return Padding(
-                          //                               padding:
-                          //                                   const EdgeInsets
-                          //                                       .all(8.0),
-                          //                               child: Column(
-                          //                                 crossAxisAlignment:
-                          //                                     CrossAxisAlignment
-                          //                                         .start,
-                          //                                 children: [
-                          //                                   InkWell(
-                          //                                     onTap: () {
-                          //                                       setState(() {});
-                          //                                     },
-                          //                                     child: Container(
-                          //                                       width: width,
-                          //                                       // height: height*0.05,
-                          //                                       decoration:
-                          //                                           BoxDecoration(
-                          //                                         color: primaryColor
-                          //                                             .withOpacity(
-                          //                                                 1.0),
-                          //                                         borderRadius:
-                          //                                             BorderRadius
-                          //                                                 .circular(
-                          //                                                     10.0),
-                          //                                       ),
-                          //                                       child: Padding(
-                          //                                         padding:
-                          //                                             const EdgeInsets
-                          //                                                 .all(
-                          //                                                 8.0),
-                          //                                         child: Row(
-                          //                                           mainAxisAlignment:
-                          //                                               MainAxisAlignment
-                          //                                                   .spaceBetween,
-                          //                                           children: [
-                          //                                             Text(
-                          //                                               storeRoomController.ingredientsLentilList[i]
-                          //                                                   [
-                          //                                                   "ingredient"],
-                          //                                               style:
-                          //                                                   TextStyle(
-                          //                                                 fontFamily:
-                          //                                                     "Lexand",
-                          //                                                 fontSize:
-                          //                                                     height * 0.013,
-                          //                                                 fontWeight:
-                          //                                                     FontWeight.w700,
-                          //                                               ),
-                          //                                             ),
-                          //                                             InkWell(
-                          //                                               onTap:
-                          //                                                   () {
-                          //                                                 showDialog(
-                          //                                                   context:
-                          //                                                       context,
-                          //                                                   builder:
-                          //                                                       (context) {
-                          //                                                     return AlertDialog(
-                          //                                                       // insetPadding: EdgeInsets.all(0.0),
-                          //                                                       content: SizedBox(
-                          //                                                         // width: double.maxFinite,
-                          //                                                         height: height * 0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                                         child: Column(
-                          //                                                           children: [
-                          //                                                             Row(
-                          //                                                               children: [
-                          //                                                                 InkWell(
-                          //                                                                   onTap: () {
-                          //                                                                     Navigator.pop(context);
-                          //                                                                     // scaffoldkey.currentState!.openDrawer();
-                          //                                                                   },
-                          //                                                                   child: Icon(
-                          //                                                                     Icons.arrow_back_ios_rounded,
-                          //                                                                     size: height * 0.039,
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                                 Expanded(
-                          //                                                                   child: Text(
-                          //                                                                     "Pick your ingredients from the table.",
-                          //                                                                     style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.018, fontWeight: FontWeight.w500),
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                               ],
-                          //                                                             ),
-                          //                                                             SizedBox(height: height * 0.02),
-                          //                                                             SizedBox(
-                          //                                                               height: height * 0.05,
-                          //                                                               child: TextFormField(
-                          //                                                                 style: TextStyle(
-                          //                                                                   fontFamily: "Lexand",
-                          //                                                                   fontSize: height * 0.018,
-                          //                                                                   fontWeight: FontWeight.w500,
-                          //                                                                 ),
-                          //                                                                 controller: ingredientsEditController = TextEditingController(text: storeRoomController.ingredientsLentilList[i]["ingredient"]),
-                          //                                                                 decoration: InputDecoration(
-                          //                                                                   // suffixIcon: Padding(
-                          //                                                                   //   padding: const EdgeInsets.all(8.0),
-                          //                                                                   //   child: Image.asset(
-                          //                                                                   //     "assets/user_icon.png",
-                          //                                                                   //     height: height * 0.02,
-                          //                                                                   //   ),
-                          //                                                                   // ),
-                          //                                                                   contentPadding: const EdgeInsets.only(left: 16.0),
-                          //                                                                   label: Text(
-                          //                                                                     "Ingredients",
-                          //                                                                     style: TextStyle(
-                          //                                                                       fontFamily: "Lexand",
-                          //                                                                       fontSize: height * 0.018,
-                          //                                                                       fontWeight: FontWeight.w300,
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                   floatingLabelStyle: const TextStyle(
-                          //                                                                     fontFamily: "Lexand",
-                          //                                                                     fontWeight: FontWeight.w300,
-                          //                                                                   ),
-                          //                                                                   border: OutlineInputBorder(
-                          //                                                                     borderRadius: BorderRadius.circular(15.0),
-                          //                                                                     borderSide: const BorderSide(width: 1.5),
-                          //                                                                   ),
-                          //                                                                   disabledBorder: OutlineInputBorder(
-                          //                                                                     borderRadius: BorderRadius.circular(30.0),
-                          //                                                                     borderSide: const BorderSide(width: 1.5),
-                          //                                                                   ),
-                          //                                                                   enabledBorder: OutlineInputBorder(
-                          //                                                                     borderRadius: BorderRadius.circular(30.0),
-                          //                                                                     borderSide: BorderSide(
-                          //                                                                       color: borderColor.withOpacity(1.0),
-                          //                                                                       width: 1.5,
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                   focusedBorder: OutlineInputBorder(
-                          //                                                                     borderRadius: BorderRadius.circular(30.0),
-                          //                                                                     borderSide: const BorderSide(width: 1.5),
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                                 onChanged: (value) {
-                          //                                                                   setState(() {});
-                          //                                                                 },
-                          //                                                               ),
-                          //                                                             ),
-                          //                                                             SizedBox(height: height * 0.02),
-                          //                                                             Container(
-                          //                                                               height: height * 0.05,
-                          //                                                               decoration: BoxDecoration(
-                          //                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                 border: Border.all(
-                          //                                                                   color: borderColor.withOpacity(1.0),
-                          //                                                                   width: 1.5,
-                          //                                                                 ),
-                          //                                                               ),
-                          //                                                               child: DropdownButtonFormField<String>(
-                          //                                                                 hint: Text(
-                          //                                                                   "Select measurement",
-                          //                                                                   style: TextStyle(
-                          //                                                                     fontFamily: "Lexand",
-                          //                                                                     fontSize: height * 0.018,
-                          //                                                                     fontWeight: FontWeight.w300,
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                                 padding: const EdgeInsets.only(left: 10, bottom: 5),
-                          //                                                                 value: selectedUnit,
-                          //                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                 onChanged: (String? newValue) {
-                          //                                                                   setState(() {
-                          //                                                                     selectedUnit = newValue!;
-                          //                                                                   });
-                          //                                                                 },
-                          //                                                                 items: <String>[
-                          //                                                                   'kg',
-                          //                                                                   'litre',
-                          //                                                                   'unit'
-                          //                                                                 ].map<DropdownMenuItem<String>>(
-                          //                                                                   (String value) {
-                          //                                                                     return DropdownMenuItem<String>(
-                          //                                                                       value: value,
-                          //                                                                       child: Padding(
-                          //                                                                         padding: EdgeInsets.symmetric(horizontal: width * 0.04),
-                          //                                                                         child: Text(
-                          //                                                                           value,
-                          //                                                                           style: TextStyle(
-                          //                                                                             fontFamily: "Lexand",
-                          //                                                                             fontSize: height * 0.018,
-                          //                                                                             fontWeight: FontWeight.w300,
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                       ),
-                          //                                                                     );
-                          //                                                                   },
-                          //                                                                 ).toList(),
-                          //                                                                 decoration: InputDecoration(
-                          //                                                                   border: InputBorder.none,
-                          //                                                                   contentPadding: EdgeInsets.zero,
-                          //                                                                   floatingLabelStyle: TextStyle(
-                          //                                                                     fontFamily: "Lexand",
-                          //                                                                     fontSize: height * 0.013,
-                          //                                                                     fontWeight: FontWeight.w300,
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                                 // Aligns the dropdown value vertically centered within the container
-                          //                                                                 alignment: Alignment.topCenter,
-                          //                                                               ),
-                          //                                                             ),
-                          //                                                             SizedBox(
-                          //                                                               height: height * 0.02,
-                          //                                                             ),
-                          //                                                             Row(
-                          //                                                               children: [
-                          //                                                                 Expanded(
-                          //                                                                   child: InkWell(
-                          //                                                                     onTap: () {
-                          //                                                                       Navigator.pop(context);
-                          //                                                                     },
-                          //                                                                     child: Padding(
-                          //                                                                       padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                       child: Container(
-                          //                                                                         height: height * 0.04,
-                          //                                                                         width: width,
-                          //                                                                         decoration: BoxDecoration(
-                          //                                                                           color: buttonColor.withOpacity(1.0),
-                          //                                                                           borderRadius: BorderRadius.circular(15.0),
-                          //                                                                         ),
-                          //                                                                         child: Padding(
-                          //                                                                           padding: const EdgeInsets.all(8.0),
-                          //                                                                           child: Center(
-                          //                                                                             child: Text(
-                          //                                                                               "Cancel",
-                          //                                                                               style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                             ),
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                                 Expanded(
-                          //                                                                   child: InkWell(
-                          //                                                                     onTap: () async {
-                          //                                                                       await storeRoomController.storRoomingrediantEdit(
-                          //                                                                         ingredientsEditController.text,
-                          //                                                                         storeRoomController.ingredientsLentilList[i]["ingredientId"],
-                          //                                                                         storeRoomController.ingredientsLentilList[i]["isChecked"],
-                          //                                                                         selectedUnit,
-                          //                                                                       );
-                          //                                                                       setState(() {});
-                          //                                                                       Navigator.pop(context);
-                          //                                                                       await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                                                     },
-                          //                                                                     child: Padding(
-                          //                                                                       padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                       child: Container(
-                          //                                                                         height: height * 0.04,
-                          //                                                                         width: width,
-                          //                                                                         decoration: BoxDecoration(
-                          //                                                                           color: buttonColor.withOpacity(1.0),
-                          //                                                                           borderRadius: BorderRadius.circular(15.0),
-                          //                                                                         ),
-                          //                                                                         child: Padding(
-                          //                                                                           padding: const EdgeInsets.all(8.0),
-                          //                                                                           child: Center(
-                          //                                                                             child: Text(
-                          //                                                                               "Save",
-                          //                                                                               style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                             ),
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                 )
-                          //                                                               ],
-                          //                                                             )
-                          //                                                           ],
-                          //                                                         ),
-                          //                                                       ),
-                          //                                                     );
-                          //                                                   },
-                          //                                                 );
-                          //                                               },
-                          //                                               child:
-                          //                                                   const Icon(
-                          //                                                 Icons
-                          //                                                     .edit,
-                          //                                                 size:
-                          //                                                     20,
-                          //                                                 color:
-                          //                                                     Colors.black,
-                          //                                               ),
-                          //                                             )
-                          //                                           ],
-                          //                                         ),
-                          //                                       ),
-                          //                                     ),
-                          //                                   ),
-                          //                                   SizedBox(
-                          //                                       height: height *
-                          //                                           0.01),
-                          //                                 ],
-                          //                               ),
-                          //                             );
-                          //                           },
-                          //                         ),
-                          //                       ),
-                          //                     ),
-                          //                   )
-                          //                 : isSeafoods
-                          //                     ? Expanded(
-                          //                         flex: 3,
-                          //                         child: SingleChildScrollView(
-                          //                           child: SizedBox(
-                          //                             height: height * 0.7,
-                          //                             child: ListView.builder(
-                          //                               // shrinkWrap: true,
-                          //                               itemCount:
-                          //                                   storeRoomController
-                          //                                       .ingredientsSeaFoodList
-                          //                                       .length,
-                          //                               itemBuilder: (
-                          //                                 context,
-                          //                                 i,
-                          //                               ) {
-                          //                                 return Padding(
-                          //                                   padding:
-                          //                                       const EdgeInsets
-                          //                                           .all(8.0),
-                          //                                   child: Column(
-                          //                                     crossAxisAlignment:
-                          //                                         CrossAxisAlignment
-                          //                                             .start,
-                          //                                     children: [
-                          //                                       InkWell(
-                          //                                         onTap: () {
-                          //                                           setState(
-                          //                                               () {});
-                          //                                         },
-                          //                                         child:
-                          //                                             Container(
-                          //                                           width:
-                          //                                               width,
-                          //                                           // height: height*0.05,
-                          //                                           decoration:
-                          //                                               BoxDecoration(
-                          //                                             color: primaryColor
-                          //                                                 .withOpacity(
-                          //                                                     1.0),
-                          //                                             borderRadius:
-                          //                                                 BorderRadius.circular(
-                          //                                                     10.0),
-                          //                                           ),
-                          //                                           child:
-                          //                                               Padding(
-                          //                                             padding: const EdgeInsets
-                          //                                                 .all(
-                          //                                                 8.0),
-                          //                                             child:
-                          //                                                 Row(
-                          //                                               mainAxisAlignment:
-                          //                                                   MainAxisAlignment.spaceBetween,
-                          //                                               children: [
-                          //                                                 Text(
-                          //                                                   storeRoomController.ingredientsSeaFoodList[i]["ingredient"],
-                          //                                                   style:
-                          //                                                       TextStyle(
-                          //                                                     fontFamily: "Lexand",
-                          //                                                     fontSize: height * 0.013,
-                          //                                                     fontWeight: FontWeight.w700,
-                          //                                                   ),
-                          //                                                 ),
-                          //                                                 InkWell(
-                          //                                                   onTap:
-                          //                                                       () {
-                          //                                                     showDialog(
-                          //                                                       context: context,
-                          //                                                       builder: (context) {
-                          //                                                         return AlertDialog(
-                          //                                                           // insetPadding: EdgeInsets.all(0.0),
-                          //                                                           content: SizedBox(
-                          //                                                             // width: double.maxFinite,
-                          //                                                             height: height * 0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                                             child: Column(
-                          //                                                               children: [
-                          //                                                                 Row(
-                          //                                                                   children: [
-                          //                                                                     InkWell(
-                          //                                                                       onTap: () {
-                          //                                                                         Navigator.pop(context);
-                          //                                                                         // scaffoldkey.currentState!.openDrawer();
-                          //                                                                       },
-                          //                                                                       child: Icon(
-                          //                                                                         Icons.arrow_back_ios_rounded,
-                          //                                                                         size: height * 0.039,
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                     Expanded(
-                          //                                                                       child: Text(
-                          //                                                                         "Pick your ingredients from the table.",
-                          //                                                                         style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.018, fontWeight: FontWeight.w500),
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                   ],
-                          //                                                                 ),
-                          //                                                                 SizedBox(height: height * 0.02),
-                          //                                                                 SizedBox(
-                          //                                                                   height: height * 0.05,
-                          //                                                                   child: TextFormField(
-                          //                                                                     style: TextStyle(
-                          //                                                                       fontFamily: "Lexand",
-                          //                                                                       fontSize: height * 0.018,
-                          //                                                                       fontWeight: FontWeight.w500,
-                          //                                                                     ),
-                          //                                                                     controller: ingredientsEditController = TextEditingController(text: storeRoomController.ingredientsSeaFoodList[i]["ingredient"]),
-                          //                                                                     decoration: InputDecoration(
-                          //                                                                       // suffixIcon: Padding(
-                          //                                                                       //   padding: const EdgeInsets.all(8.0),
-                          //                                                                       //   child: Image.asset(
-                          //                                                                       //     "assets/user_icon.png",
-                          //                                                                       //     height: height * 0.02,
-                          //                                                                       //   ),
-                          //                                                                       // ),
-                          //                                                                       contentPadding: const EdgeInsets.only(left: 16.0),
-                          //                                                                       label: Text(
-                          //                                                                         "Ingredients",
-                          //                                                                         style: TextStyle(
-                          //                                                                           fontFamily: "Lexand",
-                          //                                                                           fontSize: height * 0.018,
-                          //                                                                           fontWeight: FontWeight.w300,
-                          //                                                                         ),
-                          //                                                                       ),
-                          //                                                                       floatingLabelStyle: const TextStyle(
-                          //                                                                         fontFamily: "Lexand",
-                          //                                                                         fontWeight: FontWeight.w300,
-                          //                                                                       ),
-                          //                                                                       border: OutlineInputBorder(
-                          //                                                                         borderRadius: BorderRadius.circular(15.0),
-                          //                                                                         borderSide: const BorderSide(width: 1.5),
-                          //                                                                       ),
-                          //                                                                       disabledBorder: OutlineInputBorder(
-                          //                                                                         borderRadius: BorderRadius.circular(30.0),
-                          //                                                                         borderSide: const BorderSide(width: 1.5),
-                          //                                                                       ),
-                          //                                                                       enabledBorder: OutlineInputBorder(
-                          //                                                                         borderRadius: BorderRadius.circular(30.0),
-                          //                                                                         borderSide: BorderSide(
-                          //                                                                           color: borderColor.withOpacity(1.0),
-                          //                                                                           width: 1.5,
-                          //                                                                         ),
-                          //                                                                       ),
-                          //                                                                       focusedBorder: OutlineInputBorder(
-                          //                                                                         borderRadius: BorderRadius.circular(30.0),
-                          //                                                                         borderSide: const BorderSide(width: 1.5),
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                     onChanged: (value) {
-                          //                                                                       setState(() {});
-                          //                                                                     },
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                                 SizedBox(height: height * 0.02),
-                          //                                                                 Container(
-                          //                                                                   height: height * 0.05,
-                          //                                                                   decoration: BoxDecoration(
-                          //                                                                     borderRadius: BorderRadius.circular(30.0),
-                          //                                                                     border: Border.all(
-                          //                                                                       color: borderColor.withOpacity(1.0),
-                          //                                                                       width: 1.5,
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                   child: DropdownButtonFormField<String>(
-                          //                                                                     hint: Text(
-                          //                                                                       "Select measurement",
-                          //                                                                       style: TextStyle(
-                          //                                                                         fontFamily: "Lexand",
-                          //                                                                         fontSize: height * 0.018,
-                          //                                                                         fontWeight: FontWeight.w300,
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                     padding: const EdgeInsets.only(left: 10, bottom: 5),
-                          //                                                                     value: selectedUnit,
-                          //                                                                     borderRadius: BorderRadius.circular(30.0),
-                          //                                                                     onChanged: (String? newValue) {
-                          //                                                                       setState(() {
-                          //                                                                         selectedUnit = newValue!;
-                          //                                                                       });
-                          //                                                                     },
-                          //                                                                     items: <String>[
-                          //                                                                       'kg',
-                          //                                                                       'litre',
-                          //                                                                       'unit'
-                          //                                                                     ].map<DropdownMenuItem<String>>(
-                          //                                                                       (String value) {
-                          //                                                                         return DropdownMenuItem<String>(
-                          //                                                                           value: value,
-                          //                                                                           child: Padding(
-                          //                                                                             padding: EdgeInsets.symmetric(horizontal: width * 0.04),
-                          //                                                                             child: Text(
-                          //                                                                               value,
-                          //                                                                               style: TextStyle(
-                          //                                                                                 fontFamily: "Lexand",
-                          //                                                                                 fontSize: height * 0.018,
-                          //                                                                                 fontWeight: FontWeight.w300,
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                           ),
-                          //                                                                         );
-                          //                                                                       },
-                          //                                                                     ).toList(),
-                          //                                                                     decoration: InputDecoration(
-                          //                                                                       border: InputBorder.none,
-                          //                                                                       contentPadding: EdgeInsets.zero,
-                          //                                                                       floatingLabelStyle: TextStyle(
-                          //                                                                         fontFamily: "Lexand",
-                          //                                                                         fontSize: height * 0.013,
-                          //                                                                         fontWeight: FontWeight.w300,
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                     // Aligns the dropdown value vertically centered within the container
-                          //                                                                     alignment: Alignment.topCenter,
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                                 SizedBox(
-                          //                                                                   height: height * 0.02,
-                          //                                                                 ),
-                          //                                                                 Row(
-                          //                                                                   children: [
-                          //                                                                     Expanded(
-                          //                                                                       child: InkWell(
-                          //                                                                         onTap: () {
-                          //                                                                           Navigator.pop(context);
-                          //                                                                         },
-                          //                                                                         child: Padding(
-                          //                                                                           padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                           child: Container(
-                          //                                                                             height: height * 0.04,
-                          //                                                                             width: width,
-                          //                                                                             decoration: BoxDecoration(
-                          //                                                                               color: buttonColor.withOpacity(1.0),
-                          //                                                                               borderRadius: BorderRadius.circular(15.0),
-                          //                                                                             ),
-                          //                                                                             child: Padding(
-                          //                                                                               padding: const EdgeInsets.all(8.0),
-                          //                                                                               child: Center(
-                          //                                                                                 child: Text(
-                          //                                                                                   "Cancel",
-                          //                                                                                   style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                     Expanded(
-                          //                                                                       child: InkWell(
-                          //                                                                         onTap: () async {
-                          //                                                                           await storeRoomController.storRoomingrediantEdit(
-                          //                                                                             ingredientsEditController.text,
-                          //                                                                             storeRoomController.ingredientsSeaFoodList[i]["ingredientId"],
-                          //                                                                             storeRoomController.ingredientsSeaFoodList[i]["isChecked"],
-                          //                                                                             selectedUnit,
-                          //                                                                           );
-                          //                                                                           setState(() {});
-                          //                                                                           Navigator.pop(context);
-                          //                                                                           await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                                                         },
-                          //                                                                         child: Padding(
-                          //                                                                           padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                           child: Container(
-                          //                                                                             height: height * 0.04,
-                          //                                                                             width: width,
-                          //                                                                             decoration: BoxDecoration(
-                          //                                                                               color: buttonColor.withOpacity(1.0),
-                          //                                                                               borderRadius: BorderRadius.circular(15.0),
-                          //                                                                             ),
-                          //                                                                             child: Padding(
-                          //                                                                               padding: const EdgeInsets.all(8.0),
-                          //                                                                               child: Center(
-                          //                                                                                 child: Text(
-                          //                                                                                   "Save",
-                          //                                                                                   style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                       ),
-                          //                                                                     )
-                          //                                                                   ],
-                          //                                                                 )
-                          //                                                               ],
-                          //                                                             ),
-                          //                                                           ),
-                          //                                                         );
-                          //                                                       },
-                          //                                                     );
-                          //                                                   },
-                          //                                                   child:
-                          //                                                       const Icon(
-                          //                                                     Icons.edit,
-                          //                                                     size: 20,
-                          //                                                     color: Colors.black,
-                          //                                                   ),
-                          //                                                 )
-                          //                                               ],
-                          //                                             ),
-                          //                                           ),
-                          //                                         ),
-                          //                                       ),
-                          //                                       SizedBox(
-                          //                                           height:
-                          //                                               height *
-                          //                                                   0.01),
-                          //                                     ],
-                          //                                   ),
-                          //                                 );
-                          //                               },
-                          //                             ),
-                          //                           ),
-                          //                         ),
-                          //                       )
-                          //                     : isRice
-                          //                         ? Expanded(
-                          //                             flex: 3,
-                          //                             child:
-                          //                                 SingleChildScrollView(
-                          //                               child: SizedBox(
-                          //                                 height: height * 0.7,
-                          //                                 child:
-                          //                                     ListView.builder(
-                          //                                   // shrinkWrap: true,
-                          //                                   itemCount:
-                          //                                       storeRoomController
-                          //                                           .ingredientsRicesList
-                          //                                           .length,
-                          //                                   itemBuilder: (
-                          //                                     context,
-                          //                                     i,
-                          //                                   ) {
-                          //                                     return Padding(
-                          //                                       padding:
-                          //                                           const EdgeInsets
-                          //                                               .all(
-                          //                                               8.0),
-                          //                                       child: Column(
-                          //                                         crossAxisAlignment:
-                          //                                             CrossAxisAlignment
-                          //                                                 .start,
-                          //                                         children: [
-                          //                                           InkWell(
-                          //                                             onTap:
-                          //                                                 () {
-                          //                                               setState(
-                          //                                                   () {});
-                          //                                             },
-                          //                                             child:
-                          //                                                 Container(
-                          //                                               width:
-                          //                                                   width,
-                          //                                               // height: height*0.05,
-                          //                                               decoration:
-                          //                                                   BoxDecoration(
-                          //                                                 color:
-                          //                                                     primaryColor.withOpacity(1.0),
-                          //                                                 borderRadius:
-                          //                                                     BorderRadius.circular(10.0),
-                          //                                               ),
-                          //                                               child:
-                          //                                                   Padding(
-                          //                                                 padding: const EdgeInsets
-                          //                                                     .all(
-                          //                                                     8.0),
-                          //                                                 child:
-                          //                                                     Row(
-                          //                                                   mainAxisAlignment:
-                          //                                                       MainAxisAlignment.spaceBetween,
-                          //                                                   children: [
-                          //                                                     Text(
-                          //                                                       storeRoomController.ingredientsRicesList[i]["ingredient"],
-                          //                                                       style: TextStyle(
-                          //                                                         fontFamily: "Lexand",
-                          //                                                         fontSize: height * 0.013,
-                          //                                                         fontWeight: FontWeight.w700,
-                          //                                                       ),
-                          //                                                     ),
-                          //                                                     InkWell(
-                          //                                                       onTap: () {
-                          //                                                         showDialog(
-                          //                                                           context: context,
-                          //                                                           builder: (context) {
-                          //                                                             return AlertDialog(
-                          //                                                               // insetPadding: EdgeInsets.all(0.0),
-                          //                                                               content: SizedBox(
-                          //                                                                 // width: double.maxFinite,
-                          //                                                                 height: height * 0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                                                 child: Column(
-                          //                                                                   children: [
-                          //                                                                     Row(
-                          //                                                                       children: [
-                          //                                                                         InkWell(
-                          //                                                                           onTap: () {
-                          //                                                                             Navigator.pop(context);
-                          //                                                                             // scaffoldkey.currentState!.openDrawer();
-                          //                                                                           },
-                          //                                                                           child: Icon(
-                          //                                                                             Icons.arrow_back_ios_rounded,
-                          //                                                                             size: height * 0.039,
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                         Expanded(
-                          //                                                                           child: Text(
-                          //                                                                             "Pick your ingredients from the table.",
-                          //                                                                             style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.018, fontWeight: FontWeight.w500),
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                       ],
-                          //                                                                     ),
-                          //                                                                     SizedBox(height: height * 0.02),
-                          //                                                                     SizedBox(
-                          //                                                                       height: height * 0.05,
-                          //                                                                       child: TextFormField(
-                          //                                                                         style: TextStyle(
-                          //                                                                           fontFamily: "Lexand",
-                          //                                                                           fontSize: height * 0.018,
-                          //                                                                           fontWeight: FontWeight.w500,
-                          //                                                                         ),
-                          //                                                                         controller: ingredientsEditController = TextEditingController(text: storeRoomController.ingredientsRicesList[i]["ingredient"]),
-                          //                                                                         decoration: InputDecoration(
-                          //                                                                           // suffixIcon: Padding(
-                          //                                                                           //   padding: const EdgeInsets.all(8.0),
-                          //                                                                           //   child: Image.asset(
-                          //                                                                           //     "assets/user_icon.png",
-                          //                                                                           //     height: height * 0.02,
-                          //                                                                           //   ),
-                          //                                                                           // ),
-                          //                                                                           contentPadding: const EdgeInsets.only(left: 16.0),
-                          //                                                                           label: Text(
-                          //                                                                             "Ingredients",
-                          //                                                                             style: TextStyle(
-                          //                                                                               fontFamily: "Lexand",
-                          //                                                                               fontSize: height * 0.018,
-                          //                                                                               fontWeight: FontWeight.w300,
-                          //                                                                             ),
-                          //                                                                           ),
-                          //                                                                           floatingLabelStyle: const TextStyle(
-                          //                                                                             fontFamily: "Lexand",
-                          //                                                                             fontWeight: FontWeight.w300,
-                          //                                                                           ),
-                          //                                                                           border: OutlineInputBorder(
-                          //                                                                             borderRadius: BorderRadius.circular(15.0),
-                          //                                                                             borderSide: const BorderSide(width: 1.5),
-                          //                                                                           ),
-                          //                                                                           disabledBorder: OutlineInputBorder(
-                          //                                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                                             borderSide: const BorderSide(width: 1.5),
-                          //                                                                           ),
-                          //                                                                           enabledBorder: OutlineInputBorder(
-                          //                                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                                             borderSide: BorderSide(
-                          //                                                                               color: borderColor.withOpacity(1.0),
-                          //                                                                               width: 1.5,
-                          //                                                                             ),
-                          //                                                                           ),
-                          //                                                                           focusedBorder: OutlineInputBorder(
-                          //                                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                                             borderSide: const BorderSide(width: 1.5),
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                         onChanged: (value) {
-                          //                                                                           setState(() {});
-                          //                                                                         },
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                     SizedBox(height: height * 0.02),
-                          //                                                                     Container(
-                          //                                                                       height: height * 0.05,
-                          //                                                                       decoration: BoxDecoration(
-                          //                                                                         borderRadius: BorderRadius.circular(30.0),
-                          //                                                                         border: Border.all(
-                          //                                                                           color: borderColor.withOpacity(1.0),
-                          //                                                                           width: 1.5,
-                          //                                                                         ),
-                          //                                                                       ),
-                          //                                                                       child: DropdownButtonFormField<String>(
-                          //                                                                         hint: Text(
-                          //                                                                           "Select measurement",
-                          //                                                                           style: TextStyle(
-                          //                                                                             fontFamily: "Lexand",
-                          //                                                                             fontSize: height * 0.018,
-                          //                                                                             fontWeight: FontWeight.w300,
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                         padding: const EdgeInsets.only(left: 10, bottom: 5),
-                          //                                                                         value: selectedUnit,
-                          //                                                                         borderRadius: BorderRadius.circular(30.0),
-                          //                                                                         onChanged: (String? newValue) {
-                          //                                                                           setState(() {
-                          //                                                                             selectedUnit = newValue!;
-                          //                                                                           });
-                          //                                                                         },
-                          //                                                                         items: <String>[
-                          //                                                                           'kg',
-                          //                                                                           'litre',
-                          //                                                                           'unit'
-                          //                                                                         ].map<DropdownMenuItem<String>>(
-                          //                                                                           (String value) {
-                          //                                                                             return DropdownMenuItem<String>(
-                          //                                                                               value: value,
-                          //                                                                               child: Padding(
-                          //                                                                                 padding: EdgeInsets.symmetric(horizontal: width * 0.04),
-                          //                                                                                 child: Text(
-                          //                                                                                   value,
-                          //                                                                                   style: TextStyle(
-                          //                                                                                     fontFamily: "Lexand",
-                          //                                                                                     fontSize: height * 0.018,
-                          //                                                                                     fontWeight: FontWeight.w300,
-                          //                                                                                   ),
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                             );
-                          //                                                                           },
-                          //                                                                         ).toList(),
-                          //                                                                         decoration: InputDecoration(
-                          //                                                                           border: InputBorder.none,
-                          //                                                                           contentPadding: EdgeInsets.zero,
-                          //                                                                           floatingLabelStyle: TextStyle(
-                          //                                                                             fontFamily: "Lexand",
-                          //                                                                             fontSize: height * 0.013,
-                          //                                                                             fontWeight: FontWeight.w300,
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                         // Aligns the dropdown value vertically centered within the container
-                          //                                                                         alignment: Alignment.topCenter,
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                     SizedBox(
-                          //                                                                       height: height * 0.02,
-                          //                                                                     ),
-                          //                                                                     Row(
-                          //                                                                       children: [
-                          //                                                                         Expanded(
-                          //                                                                           child: InkWell(
-                          //                                                                             onTap: () {
-                          //                                                                               Navigator.pop(context);
-                          //                                                                             },
-                          //                                                                             child: Padding(
-                          //                                                                               padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                               child: Container(
-                          //                                                                                 height: height * 0.04,
-                          //                                                                                 width: width,
-                          //                                                                                 decoration: BoxDecoration(
-                          //                                                                                   color: buttonColor.withOpacity(1.0),
-                          //                                                                                   borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                 ),
-                          //                                                                                 child: Padding(
-                          //                                                                                   padding: const EdgeInsets.all(8.0),
-                          //                                                                                   child: Center(
-                          //                                                                                     child: Text(
-                          //                                                                                       "Cancel",
-                          //                                                                                       style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                     ),
-                          //                                                                                   ),
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                         Expanded(
-                          //                                                                           child: InkWell(
-                          //                                                                             onTap: () async {
-                          //                                                                               await storeRoomController.storRoomingrediantEdit(
-                          //                                                                                 ingredientsEditController.text,
-                          //                                                                                 storeRoomController.ingredientsRicesList[i]["ingredientId"],
-                          //                                                                                 storeRoomController.ingredientsRicesList[i]["isChecked"],
-                          //                                                                                 selectedUnit,
-                          //                                                                               );
-                          //                                                                               setState(() {});
-                          //                                                                               Navigator.pop(context);
-                          //                                                                               await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                                                             },
-                          //                                                                             child: Padding(
-                          //                                                                               padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                               child: Container(
-                          //                                                                                 height: height * 0.04,
-                          //                                                                                 width: width,
-                          //                                                                                 decoration: BoxDecoration(
-                          //                                                                                   color: buttonColor.withOpacity(1.0),
-                          //                                                                                   borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                 ),
-                          //                                                                                 child: Padding(
-                          //                                                                                   padding: const EdgeInsets.all(8.0),
-                          //                                                                                   child: Center(
-                          //                                                                                     child: Text(
-                          //                                                                                       "Save",
-                          //                                                                                       style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                     ),
-                          //                                                                                   ),
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                           ),
-                          //                                                                         )
-                          //                                                                       ],
-                          //                                                                     )
-                          //                                                                   ],
-                          //                                                                 ),
-                          //                                                               ),
-                          //                                                             );
-                          //                                                           },
-                          //                                                         );
-                          //                                                       },
-                          //                                                       child: const Icon(
-                          //                                                         Icons.edit,
-                          //                                                         size: 20,
-                          //                                                         color: Colors.black,
-                          //                                                       ),
-                          //                                                     )
-                          //                                                   ],
-                          //                                                 ),
-                          //                                               ),
-                          //                                             ),
-                          //                                           ),
-                          //                                           SizedBox(
-                          //                                               height: height *
-                          //                                                   0.01),
-                          //                                         ],
-                          //                                       ),
-                          //                                     );
-                          //                                   },
-                          //                                 ),
-                          //                               ),
-                          //                             ),
-                          //                           )
-                          //                         : isOils
-                          //                             ? Expanded(
-                          //                                 flex: 3,
-                          //                                 child:
-                          //                                     SingleChildScrollView(
-                          //                                   child: SizedBox(
-                          //                                     height:
-                          //                                         height * 0.7,
-                          //                                     child: ListView
-                          //                                         .builder(
-                          //                                       // shrinkWrap: true,
-                          //                                       itemCount:
-                          //                                           storeRoomController
-                          //                                               .ingredientsOilsList
-                          //                                               .length,
-                          //                                       itemBuilder: (
-                          //                                         context,
-                          //                                         i,
-                          //                                       ) {
-                          //                                         return Padding(
-                          //                                           padding:
-                          //                                               const EdgeInsets
-                          //                                                   .all(
-                          //                                                   8.0),
-                          //                                           child:
-                          //                                               Column(
-                          //                                             crossAxisAlignment:
-                          //                                                 CrossAxisAlignment
-                          //                                                     .start,
-                          //                                             children: [
-                          //                                               InkWell(
-                          //                                                 onTap:
-                          //                                                     () {
-                          //                                                   setState(() {});
-                          //                                                 },
-                          //                                                 child:
-                          //                                                     Container(
-                          //                                                   width:
-                          //                                                       width,
-                          //                                                   // height: height*0.05,
-                          //                                                   decoration:
-                          //                                                       BoxDecoration(
-                          //                                                     color: primaryColor.withOpacity(1.0),
-                          //                                                     borderRadius: BorderRadius.circular(10.0),
-                          //                                                   ),
-                          //                                                   child:
-                          //                                                       Padding(
-                          //                                                     padding: const EdgeInsets.all(8.0),
-                          //                                                     child: Row(
-                          //                                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          //                                                       children: [
-                          //                                                         Text(
-                          //                                                           storeRoomController.ingredientsOilsList[i]["ingredient"],
-                          //                                                           style: TextStyle(
-                          //                                                             fontFamily: "Lexand",
-                          //                                                             fontSize: height * 0.013,
-                          //                                                             fontWeight: FontWeight.w700,
-                          //                                                           ),
-                          //                                                         ),
-                          //                                                         InkWell(
-                          //                                                           onTap: () {
-                          //                                                             showDialog(
-                          //                                                               context: context,
-                          //                                                               builder: (context) {
-                          //                                                                 return AlertDialog(
-                          //                                                                   // insetPadding: EdgeInsets.all(0.0),
-                          //                                                                   content: SizedBox(
-                          //                                                                     // width: double.maxFinite,
-                          //                                                                     height: height * 0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                                                     child: Column(
-                          //                                                                       children: [
-                          //                                                                         Row(
-                          //                                                                           children: [
-                          //                                                                             InkWell(
-                          //                                                                               onTap: () {
-                          //                                                                                 Navigator.pop(context);
-                          //                                                                                 // scaffoldkey.currentState!.openDrawer();
-                          //                                                                               },
-                          //                                                                               child: Icon(
-                          //                                                                                 Icons.arrow_back_ios_rounded,
-                          //                                                                                 size: height * 0.039,
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                             Expanded(
-                          //                                                                               child: Text(
-                          //                                                                                 "Pick your ingredients from the table.",
-                          //                                                                                 style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.018, fontWeight: FontWeight.w500),
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                           ],
-                          //                                                                         ),
-                          //                                                                         SizedBox(height: height * 0.02),
-                          //                                                                         SizedBox(
-                          //                                                                           height: height * 0.05,
-                          //                                                                           child: TextFormField(
-                          //                                                                             style: TextStyle(
-                          //                                                                               fontFamily: "Lexand",
-                          //                                                                               fontSize: height * 0.018,
-                          //                                                                               fontWeight: FontWeight.w500,
-                          //                                                                             ),
-                          //                                                                             controller: ingredientsEditController = TextEditingController(text: storeRoomController.ingredientsOilsList[i]["ingredient"]),
-                          //                                                                             decoration: InputDecoration(
-                          //                                                                               // suffixIcon: Padding(
-                          //                                                                               //   padding: const EdgeInsets.all(8.0),
-                          //                                                                               //   child: Image.asset(
-                          //                                                                               //     "assets/user_icon.png",
-                          //                                                                               //     height: height * 0.02,
-                          //                                                                               //   ),
-                          //                                                                               // ),
-                          //                                                                               contentPadding: const EdgeInsets.only(left: 16.0),
-                          //                                                                               label: Text(
-                          //                                                                                 "Ingredients",
-                          //                                                                                 style: TextStyle(
-                          //                                                                                   fontFamily: "Lexand",
-                          //                                                                                   fontSize: height * 0.018,
-                          //                                                                                   fontWeight: FontWeight.w300,
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                               floatingLabelStyle: const TextStyle(
-                          //                                                                                 fontFamily: "Lexand",
-                          //                                                                                 fontWeight: FontWeight.w300,
-                          //                                                                               ),
-                          //                                                                               border: OutlineInputBorder(
-                          //                                                                                 borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                 borderSide: const BorderSide(width: 1.5),
-                          //                                                                               ),
-                          //                                                                               disabledBorder: OutlineInputBorder(
-                          //                                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                 borderSide: const BorderSide(width: 1.5),
-                          //                                                                               ),
-                          //                                                                               enabledBorder: OutlineInputBorder(
-                          //                                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                 borderSide: BorderSide(
-                          //                                                                                   color: borderColor.withOpacity(1.0),
-                          //                                                                                   width: 1.5,
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                               focusedBorder: OutlineInputBorder(
-                          //                                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                 borderSide: const BorderSide(width: 1.5),
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                             onChanged: (value) {
-                          //                                                                               setState(() {});
-                          //                                                                             },
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                         SizedBox(height: height * 0.02),
-                          //                                                                         Container(
-                          //                                                                           height: height * 0.05,
-                          //                                                                           decoration: BoxDecoration(
-                          //                                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                                             border: Border.all(
-                          //                                                                               color: borderColor.withOpacity(1.0),
-                          //                                                                               width: 1.5,
-                          //                                                                             ),
-                          //                                                                           ),
-                          //                                                                           child: DropdownButtonFormField<String>(
-                          //                                                                             hint: Text(
-                          //                                                                               "Select measurement",
-                          //                                                                               style: TextStyle(
-                          //                                                                                 fontFamily: "Lexand",
-                          //                                                                                 fontSize: height * 0.018,
-                          //                                                                                 fontWeight: FontWeight.w300,
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                             padding: const EdgeInsets.only(left: 10, bottom: 5),
-                          //                                                                             value: selectedUnit,
-                          //                                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                                             onChanged: (String? newValue) {
-                          //                                                                               setState(() {
-                          //                                                                                 selectedUnit = newValue!;
-                          //                                                                               });
-                          //                                                                             },
-                          //                                                                             items: <String>['kg', 'litre', 'unit'].map<DropdownMenuItem<String>>(
-                          //                                                                               (String value) {
-                          //                                                                                 return DropdownMenuItem<String>(
-                          //                                                                                   value: value,
-                          //                                                                                   child: Padding(
-                          //                                                                                     padding: EdgeInsets.symmetric(horizontal: width * 0.04),
-                          //                                                                                     child: Text(
-                          //                                                                                       value,
-                          //                                                                                       style: TextStyle(
-                          //                                                                                         fontFamily: "Lexand",
-                          //                                                                                         fontSize: height * 0.018,
-                          //                                                                                         fontWeight: FontWeight.w300,
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                   ),
-                          //                                                                                 );
-                          //                                                                               },
-                          //                                                                             ).toList(),
-                          //                                                                             decoration: InputDecoration(
-                          //                                                                               border: InputBorder.none,
-                          //                                                                               contentPadding: EdgeInsets.zero,
-                          //                                                                               floatingLabelStyle: TextStyle(
-                          //                                                                                 fontFamily: "Lexand",
-                          //                                                                                 fontSize: height * 0.013,
-                          //                                                                                 fontWeight: FontWeight.w300,
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                             // Aligns the dropdown value vertically centered within the container
-                          //                                                                             alignment: Alignment.topCenter,
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                         SizedBox(
-                          //                                                                           height: height * 0.02,
-                          //                                                                         ),
-                          //                                                                         Row(
-                          //                                                                           children: [
-                          //                                                                             Expanded(
-                          //                                                                               child: InkWell(
-                          //                                                                                 onTap: () {
-                          //                                                                                   Navigator.pop(context);
-                          //                                                                                 },
-                          //                                                                                 child: Padding(
-                          //                                                                                   padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                   child: Container(
-                          //                                                                                     height: height * 0.04,
-                          //                                                                                     width: width,
-                          //                                                                                     decoration: BoxDecoration(
-                          //                                                                                       color: buttonColor.withOpacity(1.0),
-                          //                                                                                       borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                     ),
-                          //                                                                                     child: Padding(
-                          //                                                                                       padding: const EdgeInsets.all(8.0),
-                          //                                                                                       child: Center(
-                          //                                                                                         child: Text(
-                          //                                                                                           "Cancel",
-                          //                                                                                           style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                         ),
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                   ),
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                             Expanded(
-                          //                                                                               child: InkWell(
-                          //                                                                                 onTap: () async {
-                          //                                                                                   await storeRoomController.storRoomingrediantEdit(
-                          //                                                                                     ingredientsEditController.text,
-                          //                                                                                     storeRoomController.ingredientsOilsList[i]["ingredientId"],
-                          //                                                                                     storeRoomController.ingredientsOilsList[i]["isChecked"],
-                          //                                                                                     selectedUnit,
-                          //                                                                                   );
-                          //                                                                                   setState(() {});
-                          //                                                                                   Navigator.pop(context);
-                          //                                                                                   await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                                                                 },
-                          //                                                                                 child: Padding(
-                          //                                                                                   padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                   child: Container(
-                          //                                                                                     height: height * 0.04,
-                          //                                                                                     width: width,
-                          //                                                                                     decoration: BoxDecoration(
-                          //                                                                                       color: buttonColor.withOpacity(1.0),
-                          //                                                                                       borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                     ),
-                          //                                                                                     child: Padding(
-                          //                                                                                       padding: const EdgeInsets.all(8.0),
-                          //                                                                                       child: Center(
-                          //                                                                                         child: Text(
-                          //                                                                                           "Save",
-                          //                                                                                           style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                         ),
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                   ),
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                             )
-                          //                                                                           ],
-                          //                                                                         )
-                          //                                                                       ],
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                 );
-                          //                                                               },
-                          //                                                             );
-                          //                                                           },
-                          //                                                           child: const Icon(
-                          //                                                             Icons.edit,
-                          //                                                             size: 20,
-                          //                                                             color: Colors.black,
-                          //                                                           ),
-                          //                                                         )
-                          //                                                       ],
-                          //                                                     ),
-                          //                                                   ),
-                          //                                                 ),
-                          //                                               ),
-                          //                                               SizedBox(
-                          //                                                   height:
-                          //                                                       height * 0.01),
-                          //                                             ],
-                          //                                           ),
-                          //                                         );
-                          //                                       },
-                          //                                     ),
-                          //                                   ),
-                          //                                 ),
-                          //                               )
-                          //                             : isFruits
-                          //                                 ? Expanded(
-                          //                                     flex: 3,
-                          //                                     child: SizedBox(
-                          //                                       height: height *
-                          //                                           0.7,
-                          //                                       child: ListView
-                          //                                           .builder(
-                          //                                         // shrinkWrap: true,
-                          //                                         itemCount:
-                          //                                             storeRoomController
-                          //                                                 .ingredientsFruitesList
-                          //                                                 .length,
-                          //                                         itemBuilder: (
-                          //                                           context,
-                          //                                           i,
-                          //                                         ) {
-                          //                                           return Padding(
-                          //                                             padding: const EdgeInsets
-                          //                                                 .all(
-                          //                                                 8.0),
-                          //                                             child:
-                          //                                                 Column(
-                          //                                               crossAxisAlignment:
-                          //                                                   CrossAxisAlignment.start,
-                          //                                               children: [
-                          //                                                 InkWell(
-                          //                                                   onTap:
-                          //                                                       () {
-                          //                                                     setState(() {});
-                          //                                                   },
-                          //                                                   child:
-                          //                                                       Container(
-                          //                                                     width: width,
-                          //                                                     // height: height*0.05,
-                          //                                                     decoration: BoxDecoration(
-                          //                                                       color: primaryColor.withOpacity(1.0),
-                          //                                                       borderRadius: BorderRadius.circular(10.0),
-                          //                                                     ),
-                          //                                                     child: Padding(
-                          //                                                       padding: const EdgeInsets.all(8.0),
-                          //                                                       child: Row(
-                          //                                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          //                                                         children: [
-                          //                                                           Text(
-                          //                                                             storeRoomController.ingredientsFruitesList[i]["ingredient"],
-                          //                                                             style: TextStyle(
-                          //                                                               fontFamily: "Lexand",
-                          //                                                               fontSize: height * 0.013,
-                          //                                                               fontWeight: FontWeight.w700,
-                          //                                                             ),
-                          //                                                           ),
-                          //                                                           InkWell(
-                          //                                                             onTap: () {
-                          //                                                               showDialog(
-                          //                                                                 context: context,
-                          //                                                                 builder: (context) {
-                          //                                                                   return AlertDialog(
-                          //                                                                     // insetPadding: EdgeInsets.all(0.0),
-                          //                                                                     content: SizedBox(
-                          //                                                                       // width: double.maxFinite,
-                          //                                                                       height: height * 0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                                                       child: Column(
-                          //                                                                         children: [
-                          //                                                                           Row(
-                          //                                                                             children: [
-                          //                                                                               InkWell(
-                          //                                                                                 onTap: () {
-                          //                                                                                   Navigator.pop(context);
-                          //                                                                                   // scaffoldkey.currentState!.openDrawer();
-                          //                                                                                 },
-                          //                                                                                 child: Icon(
-                          //                                                                                   Icons.arrow_back_ios_rounded,
-                          //                                                                                   size: height * 0.039,
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                               Expanded(
-                          //                                                                                 child: Text(
-                          //                                                                                   "Pick your ingredients from the table.",
-                          //                                                                                   style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.018, fontWeight: FontWeight.w500),
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                             ],
-                          //                                                                           ),
-                          //                                                                           SizedBox(height: height * 0.02),
-                          //                                                                           SizedBox(
-                          //                                                                             height: height * 0.05,
-                          //                                                                             child: TextFormField(
-                          //                                                                               style: TextStyle(
-                          //                                                                                 fontFamily: "Lexand",
-                          //                                                                                 fontSize: height * 0.018,
-                          //                                                                                 fontWeight: FontWeight.w500,
-                          //                                                                               ),
-                          //                                                                               controller: ingredientsEditController = TextEditingController(text: storeRoomController.ingredientsFruitesList[i]["ingredient"]),
-                          //                                                                               decoration: InputDecoration(
-                          //                                                                                 // suffixIcon: Padding(
-                          //                                                                                 //   padding: const EdgeInsets.all(8.0),
-                          //                                                                                 //   child: Image.asset(
-                          //                                                                                 //     "assets/user_icon.png",
-                          //                                                                                 //     height: height * 0.02,
-                          //                                                                                 //   ),
-                          //                                                                                 // ),
-                          //                                                                                 contentPadding: const EdgeInsets.only(left: 16.0),
-                          //                                                                                 label: Text(
-                          //                                                                                   "Ingredients",
-                          //                                                                                   style: TextStyle(
-                          //                                                                                     fontFamily: "Lexand",
-                          //                                                                                     fontSize: height * 0.018,
-                          //                                                                                     fontWeight: FontWeight.w300,
-                          //                                                                                   ),
-                          //                                                                                 ),
-                          //                                                                                 floatingLabelStyle: const TextStyle(
-                          //                                                                                   fontFamily: "Lexand",
-                          //                                                                                   fontWeight: FontWeight.w300,
-                          //                                                                                 ),
-                          //                                                                                 border: OutlineInputBorder(
-                          //                                                                                   borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                   borderSide: const BorderSide(width: 1.5),
-                          //                                                                                 ),
-                          //                                                                                 disabledBorder: OutlineInputBorder(
-                          //                                                                                   borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                   borderSide: const BorderSide(width: 1.5),
-                          //                                                                                 ),
-                          //                                                                                 enabledBorder: OutlineInputBorder(
-                          //                                                                                   borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                   borderSide: BorderSide(
-                          //                                                                                     color: borderColor.withOpacity(1.0),
-                          //                                                                                     width: 1.5,
-                          //                                                                                   ),
-                          //                                                                                 ),
-                          //                                                                                 focusedBorder: OutlineInputBorder(
-                          //                                                                                   borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                   borderSide: const BorderSide(width: 1.5),
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                               onChanged: (value) {
-                          //                                                                                 setState(() {});
-                          //                                                                               },
-                          //                                                                             ),
-                          //                                                                           ),
-                          //                                                                           SizedBox(height: height * 0.02),
-                          //                                                                           Container(
-                          //                                                                             height: height * 0.05,
-                          //                                                                             decoration: BoxDecoration(
-                          //                                                                               borderRadius: BorderRadius.circular(30.0),
-                          //                                                                               border: Border.all(
-                          //                                                                                 color: borderColor.withOpacity(1.0),
-                          //                                                                                 width: 1.5,
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                             child: DropdownButtonFormField<String>(
-                          //                                                                               hint: Text(
-                          //                                                                                 "Select measurement",
-                          //                                                                                 style: TextStyle(
-                          //                                                                                   fontFamily: "Lexand",
-                          //                                                                                   fontSize: height * 0.018,
-                          //                                                                                   fontWeight: FontWeight.w300,
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                               padding: const EdgeInsets.only(left: 10, bottom: 5),
-                          //                                                                               value: selectedUnit,
-                          //                                                                               borderRadius: BorderRadius.circular(30.0),
-                          //                                                                               onChanged: (String? newValue) {
-                          //                                                                                 setState(() {
-                          //                                                                                   selectedUnit = newValue!;
-                          //                                                                                 });
-                          //                                                                               },
-                          //                                                                               items: <String>['kg', 'litre', 'unit'].map<DropdownMenuItem<String>>(
-                          //                                                                                 (String value) {
-                          //                                                                                   return DropdownMenuItem<String>(
-                          //                                                                                     value: value,
-                          //                                                                                     child: Padding(
-                          //                                                                                       padding: EdgeInsets.symmetric(horizontal: width * 0.04),
-                          //                                                                                       child: Text(
-                          //                                                                                         value,
-                          //                                                                                         style: TextStyle(
-                          //                                                                                           fontFamily: "Lexand",
-                          //                                                                                           fontSize: height * 0.018,
-                          //                                                                                           fontWeight: FontWeight.w300,
-                          //                                                                                         ),
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                   );
-                          //                                                                                 },
-                          //                                                                               ).toList(),
-                          //                                                                               decoration: InputDecoration(
-                          //                                                                                 border: InputBorder.none,
-                          //                                                                                 contentPadding: EdgeInsets.zero,
-                          //                                                                                 floatingLabelStyle: TextStyle(
-                          //                                                                                   fontFamily: "Lexand",
-                          //                                                                                   fontSize: height * 0.013,
-                          //                                                                                   fontWeight: FontWeight.w300,
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                               // Aligns the dropdown value vertically centered within the container
-                          //                                                                               alignment: Alignment.topCenter,
-                          //                                                                             ),
-                          //                                                                           ),
-                          //                                                                           SizedBox(
-                          //                                                                             height: height * 0.02,
-                          //                                                                           ),
-                          //                                                                           Row(
-                          //                                                                             children: [
-                          //                                                                               Expanded(
-                          //                                                                                 child: InkWell(
-                          //                                                                                   onTap: () {
-                          //                                                                                     Navigator.pop(context);
-                          //                                                                                   },
-                          //                                                                                   child: Padding(
-                          //                                                                                     padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                     child: Container(
-                          //                                                                                       height: height * 0.04,
-                          //                                                                                       width: width,
-                          //                                                                                       decoration: BoxDecoration(
-                          //                                                                                         color: buttonColor.withOpacity(1.0),
-                          //                                                                                         borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                       ),
-                          //                                                                                       child: Padding(
-                          //                                                                                         padding: const EdgeInsets.all(8.0),
-                          //                                                                                         child: Center(
-                          //                                                                                           child: Text(
-                          //                                                                                             "Cancel",
-                          //                                                                                             style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                           ),
-                          //                                                                                         ),
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                   ),
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                               Expanded(
-                          //                                                                                 child: InkWell(
-                          //                                                                                   onTap: () async {
-                          //                                                                                     await storeRoomController.storRoomingrediantEdit(
-                          //                                                                                       ingredientsEditController.text,
-                          //                                                                                       storeRoomController.ingredientsFruitesList[i]["ingredientId"],
-                          //                                                                                       storeRoomController.ingredientsFruitesList[i]["isChecked"],
-                          //                                                                                       selectedUnit,
-                          //                                                                                     );
-                          //                                                                                     setState(() {});
-                          //                                                                                     Navigator.pop(context);
-                          //                                                                                     await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                                                                   },
-                          //                                                                                   child: Padding(
-                          //                                                                                     padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                     child: Container(
-                          //                                                                                       height: height * 0.04,
-                          //                                                                                       width: width,
-                          //                                                                                       decoration: BoxDecoration(
-                          //                                                                                         color: buttonColor.withOpacity(1.0),
-                          //                                                                                         borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                       ),
-                          //                                                                                       child: Padding(
-                          //                                                                                         padding: const EdgeInsets.all(8.0),
-                          //                                                                                         child: Center(
-                          //                                                                                           child: Text(
-                          //                                                                                             "Save",
-                          //                                                                                             style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                           ),
-                          //                                                                                         ),
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                   ),
-                          //                                                                                 ),
-                          //                                                                               )
-                          //                                                                             ],
-                          //                                                                           )
-                          //                                                                         ],
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                   );
-                          //                                                                 },
-                          //                                                               );
-                          //                                                             },
-                          //                                                             child: const Icon(
-                          //                                                               Icons.edit,
-                          //                                                               size: 20,
-                          //                                                               color: Colors.black,
-                          //                                                             ),
-                          //                                                           )
-                          //                                                         ],
-                          //                                                       ),
-                          //                                                     ),
-                          //                                                   ),
-                          //                                                 ),
-                          //                                                 SizedBox(
-                          //                                                     height: height * 0.01),
-                          //                                               ],
-                          //                                             ),
-                          //                                           );
-                          //                                         },
-                          //                                       ),
-                          //                                     ),
-                          //                                   )
-                          //                                 : isMeats
-                          //                                     ? Expanded(
-                          //                                         flex: 3,
-                          //                                         child:
-                          //                                             SingleChildScrollView(
-                          //                                           child:
-                          //                                               SizedBox(
-                          //                                             height:
-                          //                                                 height *
-                          //                                                     0.7,
-                          //                                             child: ListView
-                          //                                                 .builder(
-                          //                                               // shrinkWrap: true,
-                          //                                               itemCount: storeRoomController
-                          //                                                   .ingredientsMeatsList
-                          //                                                   .length,
-                          //                                               itemBuilder:
-                          //                                                   (
-                          //                                                 context,
-                          //                                                 i,
-                          //                                               ) {
-                          //                                                 return Padding(
-                          //                                                   padding:
-                          //                                                       const EdgeInsets.all(8.0),
-                          //                                                   child:
-                          //                                                       Column(
-                          //                                                     crossAxisAlignment: CrossAxisAlignment.start,
-                          //                                                     children: [
-                          //                                                       InkWell(
-                          //                                                         onTap: () {
-                          //                                                           setState(() {});
-                          //                                                         },
-                          //                                                         child: Container(
-                          //                                                           width: width,
-                          //                                                           // height: height*0.05,
-                          //                                                           decoration: BoxDecoration(
-                          //                                                             color: primaryColor.withOpacity(1.0),
-                          //                                                             borderRadius: BorderRadius.circular(10.0),
-                          //                                                           ),
-                          //                                                           child: Padding(
-                          //                                                             padding: const EdgeInsets.all(8.0),
-                          //                                                             child: Row(
-                          //                                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          //                                                               children: [
-                          //                                                                 Text(
-                          //                                                                   storeRoomController.ingredientsMeatsList[i]["ingredient"],
-                          //                                                                   style: TextStyle(
-                          //                                                                     fontFamily: "Lexand",
-                          //                                                                     fontSize: height * 0.013,
-                          //                                                                     fontWeight: FontWeight.w700,
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                                 InkWell(
-                          //                                                                   onTap: () {
-                          //                                                                     showDialog(
-                          //                                                                       context: context,
-                          //                                                                       builder: (context) {
-                          //                                                                         return AlertDialog(
-                          //                                                                           // insetPadding: EdgeInsets.all(0.0),
-                          //                                                                           content: SizedBox(
-                          //                                                                             // width: double.maxFinite,
-                          //                                                                             height: height * 0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                                                             child: Column(
-                          //                                                                               children: [
-                          //                                                                                 Row(
-                          //                                                                                   children: [
-                          //                                                                                     InkWell(
-                          //                                                                                       onTap: () {
-                          //                                                                                         Navigator.pop(context);
-                          //                                                                                         // scaffoldkey.currentState!.openDrawer();
-                          //                                                                                       },
-                          //                                                                                       child: Icon(
-                          //                                                                                         Icons.arrow_back_ios_rounded,
-                          //                                                                                         size: height * 0.039,
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                     Expanded(
-                          //                                                                                       child: Text(
-                          //                                                                                         "Pick your ingredients from the table.",
-                          //                                                                                         style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.018, fontWeight: FontWeight.w500),
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                   ],
-                          //                                                                                 ),
-                          //                                                                                 SizedBox(height: height * 0.02),
-                          //                                                                                 SizedBox(
-                          //                                                                                   height: height * 0.05,
-                          //                                                                                   child: TextFormField(
-                          //                                                                                     style: TextStyle(
-                          //                                                                                       fontFamily: "Lexand",
-                          //                                                                                       fontSize: height * 0.018,
-                          //                                                                                       fontWeight: FontWeight.w500,
-                          //                                                                                     ),
-                          //                                                                                     controller: ingredientsEditController = TextEditingController(text: storeRoomController.ingredientsMeatsList[i]["ingredient"]),
-                          //                                                                                     decoration: InputDecoration(
-                          //                                                                                       // suffixIcon: Padding(
-                          //                                                                                       //   padding: const EdgeInsets.all(8.0),
-                          //                                                                                       //   child: Image.asset(
-                          //                                                                                       //     "assets/user_icon.png",
-                          //                                                                                       //     height: height * 0.02,
-                          //                                                                                       //   ),
-                          //                                                                                       // ),
-
-                          //                                                                                       contentPadding: const EdgeInsets.only(left: 16.0),
-                          //                                                                                       label: Text(
-                          //                                                                                         "Ingredients",
-                          //                                                                                         style: TextStyle(
-                          //                                                                                           fontFamily: "Lexand",
-                          //                                                                                           fontSize: height * 0.018,
-                          //                                                                                           fontWeight: FontWeight.w300,
-                          //                                                                                         ),
-                          //                                                                                       ),
-                          //                                                                                       floatingLabelStyle: const TextStyle(
-                          //                                                                                         fontFamily: "Lexand",
-                          //                                                                                         fontWeight: FontWeight.w300,
-                          //                                                                                       ),
-                          //                                                                                       border: OutlineInputBorder(
-                          //                                                                                         borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                         borderSide: const BorderSide(width: 1.5),
-                          //                                                                                       ),
-                          //                                                                                       disabledBorder: OutlineInputBorder(
-                          //                                                                                         borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                         borderSide: const BorderSide(width: 1.5),
-                          //                                                                                       ),
-                          //                                                                                       enabledBorder: OutlineInputBorder(
-                          //                                                                                         borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                         borderSide: BorderSide(
-                          //                                                                                           color: borderColor.withOpacity(1.0),
-                          //                                                                                           width: 1.5,
-                          //                                                                                         ),
-                          //                                                                                       ),
-                          //                                                                                       focusedBorder: OutlineInputBorder(
-                          //                                                                                         borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                         borderSide: const BorderSide(width: 1.5),
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                     onChanged: (value) {
-                          //                                                                                       setState(() {});
-                          //                                                                                     },
-                          //                                                                                   ),
-                          //                                                                                 ),
-                          //                                                                                 SizedBox(height: height * 0.02),
-                          //                                                                                 Container(
-                          //                                                                                   height: height * 0.05,
-                          //                                                                                   decoration: BoxDecoration(
-                          //                                                                                     borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                     border: Border.all(
-                          //                                                                                       color: borderColor.withOpacity(1.0),
-                          //                                                                                       width: 1.5,
-                          //                                                                                     ),
-                          //                                                                                   ),
-                          //                                                                                   child: DropdownButtonFormField<String>(
-                          //                                                                                     hint: Text(
-                          //                                                                                       "Select measurement",
-                          //                                                                                       style: TextStyle(
-                          //                                                                                         fontFamily: "Lexand",
-                          //                                                                                         fontSize: height * 0.018,
-                          //                                                                                         fontWeight: FontWeight.w300,
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                     padding: const EdgeInsets.only(left: 10, bottom: 5),
-                          //                                                                                     value: selectedUnit,
-                          //                                                                                     borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                     onChanged: (String? newValue) {
-                          //                                                                                       setState(() {
-                          //                                                                                         selectedUnit = newValue!;
-                          //                                                                                       });
-                          //                                                                                     },
-                          //                                                                                     items: <String>['kg', 'litre', 'unit'].map<DropdownMenuItem<String>>(
-                          //                                                                                       (String value) {
-                          //                                                                                         return DropdownMenuItem<String>(
-                          //                                                                                           value: value,
-                          //                                                                                           child: Padding(
-                          //                                                                                             padding: EdgeInsets.symmetric(horizontal: width * 0.04),
-                          //                                                                                             child: Text(
-                          //                                                                                               value,
-                          //                                                                                               style: TextStyle(
-                          //                                                                                                 fontFamily: "Lexand",
-                          //                                                                                                 fontSize: height * 0.018,
-                          //                                                                                                 fontWeight: FontWeight.w300,
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                           ),
-                          //                                                                                         );
-                          //                                                                                       },
-                          //                                                                                     ).toList(),
-                          //                                                                                     decoration: InputDecoration(
-                          //                                                                                       border: InputBorder.none,
-                          //                                                                                       contentPadding: EdgeInsets.zero,
-                          //                                                                                       floatingLabelStyle: TextStyle(
-                          //                                                                                         fontFamily: "Lexand",
-                          //                                                                                         fontSize: height * 0.013,
-                          //                                                                                         fontWeight: FontWeight.w300,
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                     // Aligns the dropdown value vertically centered within the container
-                          //                                                                                     alignment: Alignment.topCenter,
-                          //                                                                                   ),
-                          //                                                                                 ),
-                          //                                                                                 SizedBox(
-                          //                                                                                   height: height * 0.02,
-                          //                                                                                 ),
-                          //                                                                                 Row(
-                          //                                                                                   children: [
-                          //                                                                                     Expanded(
-                          //                                                                                       child: InkWell(
-                          //                                                                                         onTap: () {
-                          //                                                                                           Navigator.pop(context);
-                          //                                                                                         },
-                          //                                                                                         child: Padding(
-                          //                                                                                           padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                           child: Container(
-                          //                                                                                             height: height * 0.04,
-                          //                                                                                             width: width,
-                          //                                                                                             decoration: BoxDecoration(
-                          //                                                                                               color: buttonColor.withOpacity(1.0),
-                          //                                                                                               borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                             ),
-                          //                                                                                             child: Padding(
-                          //                                                                                               padding: const EdgeInsets.all(8.0),
-                          //                                                                                               child: Center(
-                          //                                                                                                 child: Text(
-                          //                                                                                                   "Cancel",
-                          //                                                                                                   style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                                 ),
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                           ),
-                          //                                                                                         ),
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                     Expanded(
-                          //                                                                                       child: InkWell(
-                          //                                                                                         onTap: () async {
-                          //                                                                                           await storeRoomController.storRoomingrediantEdit(
-                          //                                                                                             ingredientsEditController.text,
-                          //                                                                                             storeRoomController.ingredientsMeatsList[i]["ingredientId"],
-                          //                                                                                             storeRoomController.ingredientsMeatsList[i]["isChecked"],
-                          //                                                                                             selectedUnit,
-                          //                                                                                           );
-                          //                                                                                           setState(() {});
-                          //                                                                                           Navigator.pop(context);
-                          //                                                                                           await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                                                                         },
-                          //                                                                                         child: Padding(
-                          //                                                                                           padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                           child: Container(
-                          //                                                                                             height: height * 0.04,
-                          //                                                                                             width: width,
-                          //                                                                                             decoration: BoxDecoration(
-                          //                                                                                               color: buttonColor.withOpacity(1.0),
-                          //                                                                                               borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                             ),
-                          //                                                                                             child: Padding(
-                          //                                                                                               padding: const EdgeInsets.all(8.0),
-                          //                                                                                               child: Center(
-                          //                                                                                                 child: Text(
-                          //                                                                                                   "Save",
-                          //                                                                                                   style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                                 ),
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                           ),
-                          //                                                                                         ),
-                          //                                                                                       ),
-                          //                                                                                     )
-                          //                                                                                   ],
-                          //                                                                                 )
-                          //                                                                               ],
-                          //                                                                             ),
-                          //                                                                           ),
-                          //                                                                         );
-                          //                                                                       },
-                          //                                                                     );
-                          //                                                                   },
-                          //                                                                   child: const Icon(
-                          //                                                                     Icons.edit,
-                          //                                                                     size: 20,
-                          //                                                                     color: Colors.black,
-                          //                                                                   ),
-                          //                                                                 )
-                          //                                                               ],
-                          //                                                             ),
-                          //                                                           ),
-                          //                                                         ),
-                          //                                                       ),
-                          //                                                       SizedBox(height: height * 0.01),
-                          //                                                     ],
-                          //                                                   ),
-                          //                                                 );
-                          //                                               },
-                          //                                             ),
-                          //                                           ),
-                          //                                         ),
-                          //                                       )
-                          //                                     : isFlour
-                          //                                         ? Expanded(
-                          //                                             flex: 3,
-                          //                                             child:
-                          //                                                 SingleChildScrollView(
-                          //                                               child:
-                          //                                                   SizedBox(
-                          //                                                 height:
-                          //                                                     height * 0.7,
-                          //                                                 child:
-                          //                                                     ListView.builder(
-                          //                                                   // shrinkWrap: true,
-                          //                                                   itemCount:
-                          //                                                       storeRoomController.ingredientsFloursList.length,
-                          //                                                   itemBuilder:
-                          //                                                       (
-                          //                                                     context,
-                          //                                                     i,
-                          //                                                   ) {
-                          //                                                     return Padding(
-                          //                                                       padding: const EdgeInsets.all(8.0),
-                          //                                                       child: Column(
-                          //                                                         crossAxisAlignment: CrossAxisAlignment.start,
-                          //                                                         children: [
-                          //                                                           InkWell(
-                          //                                                             onTap: () {
-                          //                                                               setState(() {});
-                          //                                                             },
-                          //                                                             child: Container(
-                          //                                                               width: width,
-                          //                                                               // height: height*0.05,
-                          //                                                               decoration: BoxDecoration(
-                          //                                                                 color: primaryColor.withOpacity(1.0),
-                          //                                                                 borderRadius: BorderRadius.circular(10.0),
-                          //                                                               ),
-                          //                                                               child: Padding(
-                          //                                                                 padding: const EdgeInsets.all(8.0),
-                          //                                                                 child: Row(
-                          //                                                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          //                                                                   children: [
-                          //                                                                     Text(
-                          //                                                                       storeRoomController.ingredientsFloursList[i]["ingredient"],
-                          //                                                                       style: TextStyle(
-                          //                                                                         fontFamily: "Lexand",
-                          //                                                                         fontSize: height * 0.013,
-                          //                                                                         fontWeight: FontWeight.w700,
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                     InkWell(
-                          //                                                                       onTap: () {
-                          //                                                                         showDialog(
-                          //                                                                           context: context,
-                          //                                                                           builder: (context) {
-                          //                                                                             return AlertDialog(
-                          //                                                                               // insetPadding: EdgeInsets.all(0.0),
-                          //                                                                               content: SizedBox(
-                          //                                                                                 // width: double.maxFinite,
-                          //                                                                                 height: height * 0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                                                                 child: Column(
-                          //                                                                                   children: [
-                          //                                                                                     Row(
-                          //                                                                                       children: [
-                          //                                                                                         InkWell(
-                          //                                                                                           onTap: () {
-                          //                                                                                             Navigator.pop(context);
-                          //                                                                                             // scaffoldkey.currentState!.openDrawer();
-                          //                                                                                           },
-                          //                                                                                           child: Icon(
-                          //                                                                                             Icons.arrow_back_ios_rounded,
-                          //                                                                                             size: height * 0.039,
-                          //                                                                                           ),
-                          //                                                                                         ),
-                          //                                                                                         Expanded(
-                          //                                                                                           child: Text(
-                          //                                                                                             "Pick your ingredients from the table.",
-                          //                                                                                             style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.018, fontWeight: FontWeight.w500),
-                          //                                                                                           ),
-                          //                                                                                         ),
-                          //                                                                                       ],
-                          //                                                                                     ),
-                          //                                                                                     SizedBox(height: height * 0.02),
-                          //                                                                                     SizedBox(
-                          //                                                                                       height: height * 0.05,
-                          //                                                                                       child: TextFormField(
-                          //                                                                                         style: TextStyle(
-                          //                                                                                           fontFamily: "Lexand",
-                          //                                                                                           fontSize: height * 0.018,
-                          //                                                                                           fontWeight: FontWeight.w500,
-                          //                                                                                         ),
-                          //                                                                                         controller: ingredientsEditController = TextEditingController(text: storeRoomController.ingredientsFloursList[i]["ingredient"]),
-                          //                                                                                         decoration: InputDecoration(
-                          //                                                                                           // suffixIcon: Padding(
-                          //                                                                                           //   padding: const EdgeInsets.all(8.0),
-                          //                                                                                           //   child: Image.asset(
-                          //                                                                                           //     "assets/user_icon.png",
-                          //                                                                                           //     height: height * 0.02,
-                          //                                                                                           //   ),
-                          //                                                                                           // ),
-                          //                                                                                           contentPadding: const EdgeInsets.only(left: 16.0),
-                          //                                                                                           label: Text(
-                          //                                                                                             "Ingredients",
-                          //                                                                                             style: TextStyle(
-                          //                                                                                               fontFamily: "Lexand",
-                          //                                                                                               fontSize: height * 0.018,
-                          //                                                                                               fontWeight: FontWeight.w300,
-                          //                                                                                             ),
-                          //                                                                                           ),
-                          //                                                                                           floatingLabelStyle: const TextStyle(
-                          //                                                                                             fontFamily: "Lexand",
-                          //                                                                                             fontWeight: FontWeight.w300,
-                          //                                                                                           ),
-                          //                                                                                           border: OutlineInputBorder(
-                          //                                                                                             borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                             borderSide: const BorderSide(width: 1.5),
-                          //                                                                                           ),
-                          //                                                                                           disabledBorder: OutlineInputBorder(
-                          //                                                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                             borderSide: const BorderSide(width: 1.5),
-                          //                                                                                           ),
-                          //                                                                                           enabledBorder: OutlineInputBorder(
-                          //                                                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                             borderSide: BorderSide(
-                          //                                                                                               color: borderColor.withOpacity(1.0),
-                          //                                                                                               width: 1.5,
-                          //                                                                                             ),
-                          //                                                                                           ),
-                          //                                                                                           focusedBorder: OutlineInputBorder(
-                          //                                                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                             borderSide: const BorderSide(width: 1.5),
-                          //                                                                                           ),
-                          //                                                                                         ),
-                          //                                                                                         onChanged: (value) {
-                          //                                                                                           setState(() {});
-                          //                                                                                         },
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                     SizedBox(height: height * 0.02),
-                          //                                                                                     Container(
-                          //                                                                                       height: height * 0.05,
-                          //                                                                                       decoration: BoxDecoration(
-                          //                                                                                         borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                         border: Border.all(
-                          //                                                                                           color: borderColor.withOpacity(1.0),
-                          //                                                                                           width: 1.5,
-                          //                                                                                         ),
-                          //                                                                                       ),
-                          //                                                                                       child: DropdownButtonFormField<String>(
-                          //                                                                                         hint: Text(
-                          //                                                                                           "Select measurement",
-                          //                                                                                           style: TextStyle(
-                          //                                                                                             fontFamily: "Lexand",
-                          //                                                                                             fontSize: height * 0.018,
-                          //                                                                                             fontWeight: FontWeight.w300,
-                          //                                                                                           ),
-                          //                                                                                         ),
-                          //                                                                                         padding: const EdgeInsets.only(left: 10, bottom: 5),
-                          //                                                                                         value: selectedUnit,
-                          //                                                                                         borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                         onChanged: (String? newValue) {
-                          //                                                                                           setState(() {
-                          //                                                                                             selectedUnit = newValue!;
-                          //                                                                                           });
-                          //                                                                                         },
-                          //                                                                                         items: <String>['kg', 'litre', 'unit'].map<DropdownMenuItem<String>>(
-                          //                                                                                           (String value) {
-                          //                                                                                             return DropdownMenuItem<String>(
-                          //                                                                                               value: value,
-                          //                                                                                               child: Padding(
-                          //                                                                                                 padding: EdgeInsets.symmetric(horizontal: width * 0.04),
-                          //                                                                                                 child: Text(
-                          //                                                                                                   value,
-                          //                                                                                                   style: TextStyle(
-                          //                                                                                                     fontFamily: "Lexand",
-                          //                                                                                                     fontSize: height * 0.018,
-                          //                                                                                                     fontWeight: FontWeight.w300,
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                               ),
-                          //                                                                                             );
-                          //                                                                                           },
-                          //                                                                                         ).toList(),
-                          //                                                                                         decoration: InputDecoration(
-                          //                                                                                           border: InputBorder.none,
-                          //                                                                                           contentPadding: EdgeInsets.zero,
-                          //                                                                                           floatingLabelStyle: TextStyle(
-                          //                                                                                             fontFamily: "Lexand",
-                          //                                                                                             fontSize: height * 0.013,
-                          //                                                                                             fontWeight: FontWeight.w300,
-                          //                                                                                           ),
-                          //                                                                                         ),
-                          //                                                                                         // Aligns the dropdown value vertically centered within the container
-                          //                                                                                         alignment: Alignment.topCenter,
-                          //                                                                                       ),
-                          //                                                                                     ),
-                          //                                                                                     SizedBox(
-                          //                                                                                       height: height * 0.02,
-                          //                                                                                     ),
-                          //                                                                                     Row(
-                          //                                                                                       children: [
-                          //                                                                                         Expanded(
-                          //                                                                                           child: InkWell(
-                          //                                                                                             onTap: () {
-                          //                                                                                               Navigator.pop(context);
-                          //                                                                                             },
-                          //                                                                                             child: Padding(
-                          //                                                                                               padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                               child: Container(
-                          //                                                                                                 height: height * 0.04,
-                          //                                                                                                 width: width,
-                          //                                                                                                 decoration: BoxDecoration(
-                          //                                                                                                   color: buttonColor.withOpacity(1.0),
-                          //                                                                                                   borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                                 ),
-                          //                                                                                                 child: Padding(
-                          //                                                                                                   padding: const EdgeInsets.all(8.0),
-                          //                                                                                                   child: Center(
-                          //                                                                                                     child: Text(
-                          //                                                                                                       "Cancel",
-                          //                                                                                                       style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                                     ),
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                           ),
-                          //                                                                                         ),
-                          //                                                                                         Expanded(
-                          //                                                                                           child: InkWell(
-                          //                                                                                             onTap: () async {
-                          //                                                                                               await storeRoomController.storRoomingrediantEdit(
-                          //                                                                                                 ingredientsEditController.text,
-                          //                                                                                                 storeRoomController.ingredientsFloursList[i]["ingredientId"],
-                          //                                                                                                 storeRoomController.ingredientsFloursList[i]["isChecked"],
-                          //                                                                                                 selectedUnit,
-                          //                                                                                               );
-                          //                                                                                               setState(() {});
-                          //                                                                                               Navigator.pop(context);
-                          //                                                                                               await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                                                                             },
-                          //                                                                                             child: Padding(
-                          //                                                                                               padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                               child: Container(
-                          //                                                                                                 height: height * 0.04,
-                          //                                                                                                 width: width,
-                          //                                                                                                 decoration: BoxDecoration(
-                          //                                                                                                   color: buttonColor.withOpacity(1.0),
-                          //                                                                                                   borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                                 ),
-                          //                                                                                                 child: Padding(
-                          //                                                                                                   padding: const EdgeInsets.all(8.0),
-                          //                                                                                                   child: Center(
-                          //                                                                                                     child: Text(
-                          //                                                                                                       "Save",
-                          //                                                                                                       style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                                     ),
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                           ),
-                          //                                                                                         )
-                          //                                                                                       ],
-                          //                                                                                     )
-                          //                                                                                   ],
-                          //                                                                                 ),
-                          //                                                                               ),
-                          //                                                                             );
-                          //                                                                           },
-                          //                                                                         );
-                          //                                                                       },
-                          //                                                                       child: const Icon(
-                          //                                                                         Icons.edit,
-                          //                                                                         size: 20,
-                          //                                                                         color: Colors.black,
-                          //                                                                       ),
-                          //                                                                     )
-                          //                                                                   ],
-                          //                                                                 ),
-                          //                                                               ),
-                          //                                                             ),
-                          //                                                           ),
-                          //                                                           SizedBox(height: height * 0.01),
-                          //                                                         ],
-                          //                                                       ),
-                          //                                                     );
-                          //                                                   },
-                          //                                                 ),
-                          //                                               ),
-                          //                                             ),
-                          //                                           )
-                          //                                         : isSauces
-                          //                                             ? Expanded(
-                          //                                                 flex:
-                          //                                                     3,
-                          //                                                 child:
-                          //                                                     SingleChildScrollView(
-                          //                                                   child:
-                          //                                                       SizedBox(
-                          //                                                     height: height * 0.7,
-                          //                                                     child: ListView.builder(
-                          //                                                       // shrinkWrap: true,
-                          //                                                       itemCount: storeRoomController.ingredientsSaucesList.length,
-                          //                                                       itemBuilder: (
-                          //                                                         context,
-                          //                                                         i,
-                          //                                                       ) {
-                          //                                                         return Padding(
-                          //                                                           padding: const EdgeInsets.all(8.0),
-                          //                                                           child: Column(
-                          //                                                             crossAxisAlignment: CrossAxisAlignment.start,
-                          //                                                             children: [
-                          //                                                               InkWell(
-                          //                                                                 onTap: () {
-                          //                                                                   setState(() {});
-                          //                                                                 },
-                          //                                                                 child: Container(
-                          //                                                                   width: width,
-                          //                                                                   // height: height*0.05,
-                          //                                                                   decoration: BoxDecoration(
-                          //                                                                     color: primaryColor.withOpacity(1.0),
-                          //                                                                     borderRadius: BorderRadius.circular(10.0),
-                          //                                                                   ),
-                          //                                                                   child: Padding(
-                          //                                                                     padding: const EdgeInsets.all(8.0),
-                          //                                                                     child: Row(
-                          //                                                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          //                                                                       children: [
-                          //                                                                         Text(
-                          //                                                                           storeRoomController.ingredientsSaucesList[i]["ingredient"],
-                          //                                                                           style: TextStyle(
-                          //                                                                             fontFamily: "Lexand",
-                          //                                                                             fontSize: height * 0.013,
-                          //                                                                             fontWeight: FontWeight.w700,
-                          //                                                                           ),
-                          //                                                                         ),
-                          //                                                                         InkWell(
-                          //                                                                           onTap: () {
-                          //                                                                             showDialog(
-                          //                                                                               context: context,
-                          //                                                                               builder: (context) {
-                          //                                                                                 return AlertDialog(
-                          //                                                                                   // insetPadding: EdgeInsets.all(0.0),
-                          //                                                                                   content: SizedBox(
-                          //                                                                                     // width: double.maxFinite,
-                          //                                                                                     height: height * 0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                                                                     child: Column(
-                          //                                                                                       children: [
-                          //                                                                                         Row(
-                          //                                                                                           children: [
-                          //                                                                                             InkWell(
-                          //                                                                                               onTap: () {
-                          //                                                                                                 Navigator.pop(context);
-                          //                                                                                                 // scaffoldkey.currentState!.openDrawer();
-                          //                                                                                               },
-                          //                                                                                               child: Icon(
-                          //                                                                                                 Icons.arrow_back_ios_rounded,
-                          //                                                                                                 size: height * 0.039,
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                             Expanded(
-                          //                                                                                               child: Text(
-                          //                                                                                                 "Pick your ingredients from the table.",
-                          //                                                                                                 style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.018, fontWeight: FontWeight.w500),
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                           ],
-                          //                                                                                         ),
-                          //                                                                                         SizedBox(height: height * 0.02),
-                          //                                                                                         SizedBox(
-                          //                                                                                           height: height * 0.05,
-                          //                                                                                           child: TextFormField(
-                          //                                                                                             style: TextStyle(
-                          //                                                                                               fontFamily: "Lexand",
-                          //                                                                                               fontSize: height * 0.018,
-                          //                                                                                               fontWeight: FontWeight.w500,
-                          //                                                                                             ),
-                          //                                                                                             controller: ingredientsEditController = TextEditingController(text: storeRoomController.ingredientsSaucesList[i]["ingredient"]),
-                          //                                                                                             decoration: InputDecoration(
-                          //                                                                                               // suffixIcon: Padding(
-                          //                                                                                               //   padding: const EdgeInsets.all(8.0),
-                          //                                                                                               //   child: Image.asset(
-                          //                                                                                               //     "assets/user_icon.png",
-                          //                                                                                               //     height: height * 0.02,
-                          //                                                                                               //   ),
-                          //                                                                                               // ),
-                          //                                                                                               contentPadding: const EdgeInsets.only(left: 16.0),
-                          //                                                                                               label: Text(
-                          //                                                                                                 "Ingredients",
-                          //                                                                                                 style: TextStyle(
-                          //                                                                                                   fontFamily: "Lexand",
-                          //                                                                                                   fontSize: height * 0.018,
-                          //                                                                                                   fontWeight: FontWeight.w300,
-                          //                                                                                                 ),
-                          //                                                                                               ),
-                          //                                                                                               floatingLabelStyle: const TextStyle(
-                          //                                                                                                 fontFamily: "Lexand",
-                          //                                                                                                 fontWeight: FontWeight.w300,
-                          //                                                                                               ),
-                          //                                                                                               border: OutlineInputBorder(
-                          //                                                                                                 borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                                 borderSide: const BorderSide(width: 1.5),
-                          //                                                                                               ),
-                          //                                                                                               disabledBorder: OutlineInputBorder(
-                          //                                                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                                 borderSide: const BorderSide(width: 1.5),
-                          //                                                                                               ),
-                          //                                                                                               enabledBorder: OutlineInputBorder(
-                          //                                                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                                 borderSide: BorderSide(
-                          //                                                                                                   color: borderColor.withOpacity(1.0),
-                          //                                                                                                   width: 1.5,
-                          //                                                                                                 ),
-                          //                                                                                               ),
-                          //                                                                                               focusedBorder: OutlineInputBorder(
-                          //                                                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                                 borderSide: const BorderSide(width: 1.5),
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                             onChanged: (value) {
-                          //                                                                                               setState(() {});
-                          //                                                                                             },
-                          //                                                                                           ),
-                          //                                                                                         ),
-                          //                                                                                         SizedBox(height: height * 0.02),
-                          //                                                                                         Container(
-                          //                                                                                           height: height * 0.05,
-                          //                                                                                           decoration: BoxDecoration(
-                          //                                                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                             border: Border.all(
-                          //                                                                                               color: borderColor.withOpacity(1.0),
-                          //                                                                                               width: 1.5,
-                          //                                                                                             ),
-                          //                                                                                           ),
-                          //                                                                                           child: DropdownButtonFormField<String>(
-                          //                                                                                             hint: Text(
-                          //                                                                                               "Select measurement",
-                          //                                                                                               style: TextStyle(
-                          //                                                                                                 fontFamily: "Lexand",
-                          //                                                                                                 fontSize: height * 0.018,
-                          //                                                                                                 fontWeight: FontWeight.w300,
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                             padding: const EdgeInsets.only(left: 10, bottom: 5),
-                          //                                                                                             value: selectedUnit,
-                          //                                                                                             borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                             onChanged: (String? newValue) {
-                          //                                                                                               setState(() {
-                          //                                                                                                 selectedUnit = newValue!;
-                          //                                                                                               });
-                          //                                                                                             },
-                          //                                                                                             items: <String>['kg', 'litre', 'unit'].map<DropdownMenuItem<String>>(
-                          //                                                                                               (String value) {
-                          //                                                                                                 return DropdownMenuItem<String>(
-                          //                                                                                                   value: value,
-                          //                                                                                                   child: Padding(
-                          //                                                                                                     padding: EdgeInsets.symmetric(horizontal: width * 0.04),
-                          //                                                                                                     child: Text(
-                          //                                                                                                       value,
-                          //                                                                                                       style: TextStyle(
-                          //                                                                                                         fontFamily: "Lexand",
-                          //                                                                                                         fontSize: height * 0.018,
-                          //                                                                                                         fontWeight: FontWeight.w300,
-                          //                                                                                                       ),
-                          //                                                                                                     ),
-                          //                                                                                                   ),
-                          //                                                                                                 );
-                          //                                                                                               },
-                          //                                                                                             ).toList(),
-                          //                                                                                             decoration: InputDecoration(
-                          //                                                                                               border: InputBorder.none,
-                          //                                                                                               contentPadding: EdgeInsets.zero,
-                          //                                                                                               floatingLabelStyle: TextStyle(
-                          //                                                                                                 fontFamily: "Lexand",
-                          //                                                                                                 fontSize: height * 0.013,
-                          //                                                                                                 fontWeight: FontWeight.w300,
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                             // Aligns the dropdown value vertically centered within the container
-                          //                                                                                             alignment: Alignment.topCenter,
-                          //                                                                                           ),
-                          //                                                                                         ),
-                          //                                                                                         SizedBox(
-                          //                                                                                           height: height * 0.02,
-                          //                                                                                         ),
-                          //                                                                                         Row(
-                          //                                                                                           children: [
-                          //                                                                                             Expanded(
-                          //                                                                                               child: InkWell(
-                          //                                                                                                 onTap: () {
-                          //                                                                                                   Navigator.pop(context);
-                          //                                                                                                 },
-                          //                                                                                                 child: Padding(
-                          //                                                                                                   padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                                   child: Container(
-                          //                                                                                                     height: height * 0.04,
-                          //                                                                                                     width: width,
-                          //                                                                                                     decoration: BoxDecoration(
-                          //                                                                                                       color: buttonColor.withOpacity(1.0),
-                          //                                                                                                       borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                                     ),
-                          //                                                                                                     child: Padding(
-                          //                                                                                                       padding: const EdgeInsets.all(8.0),
-                          //                                                                                                       child: Center(
-                          //                                                                                                         child: Text(
-                          //                                                                                                           "Cancel",
-                          //                                                                                                           style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                                         ),
-                          //                                                                                                       ),
-                          //                                                                                                     ),
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                             Expanded(
-                          //                                                                                               child: InkWell(
-                          //                                                                                                 onTap: () async {
-                          //                                                                                                   await storeRoomController.storRoomingrediantEdit(
-                          //                                                                                                     ingredientsEditController.text,
-                          //                                                                                                     storeRoomController.ingredientsSaucesList[i]["ingredientId"],
-                          //                                                                                                     storeRoomController.ingredientsSaucesList[i]["isChecked"],
-                          //                                                                                                     selectedUnit,
-                          //                                                                                                   );
-                          //                                                                                                   setState(() {});
-                          //                                                                                                   Navigator.pop(context);
-                          //                                                                                                   await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                                                                                 },
-                          //                                                                                                 child: Padding(
-                          //                                                                                                   padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                                   child: Container(
-                          //                                                                                                     height: height * 0.04,
-                          //                                                                                                     width: width,
-                          //                                                                                                     decoration: BoxDecoration(
-                          //                                                                                                       color: buttonColor.withOpacity(1.0),
-                          //                                                                                                       borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                                     ),
-                          //                                                                                                     child: Padding(
-                          //                                                                                                       padding: const EdgeInsets.all(8.0),
-                          //                                                                                                       child: Center(
-                          //                                                                                                         child: Text(
-                          //                                                                                                           "Save",
-                          //                                                                                                           style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                                         ),
-                          //                                                                                                       ),
-                          //                                                                                                     ),
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                               ),
-                          //                                                                                             )
-                          //                                                                                           ],
-                          //                                                                                         )
-                          //                                                                                       ],
-                          //                                                                                     ),
-                          //                                                                                   ),
-                          //                                                                                 );
-                          //                                                                               },
-                          //                                                                             );
-                          //                                                                           },
-                          //                                                                           child: const Icon(
-                          //                                                                             Icons.edit,
-                          //                                                                             size: 20,
-                          //                                                                             color: Colors.black,
-                          //                                                                           ),
-                          //                                                                         )
-                          //                                                                       ],
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                 ),
-                          //                                                               ),
-                          //                                                               SizedBox(height: height * 0.01),
-                          //                                                             ],
-                          //                                                           ),
-                          //                                                         );
-                          //                                                       },
-                          //                                                     ),
-                          //                                                   ),
-                          //                                                 ),
-                          //                                               )
-                          //                                             : isBeverages
-                          //                                                 ? Expanded(
-                          //                                                     flex: 3,
-                          //                                                     child: SingleChildScrollView(
-                          //                                                       child: SizedBox(
-                          //                                                         height: height * 0.7,
-                          //                                                         child: ListView.builder(
-                          //                                                           // shrinkWrap: true,
-                          //                                                           itemCount: storeRoomController.ingredientsBeveragesList.length,
-                          //                                                           itemBuilder: (
-                          //                                                             context,
-                          //                                                             i,
-                          //                                                           ) {
-                          //                                                             return Padding(
-                          //                                                               padding: const EdgeInsets.all(8.0),
-                          //                                                               child: Column(
-                          //                                                                 crossAxisAlignment: CrossAxisAlignment.start,
-                          //                                                                 children: [
-                          //                                                                   InkWell(
-                          //                                                                     onTap: () {
-                          //                                                                       setState(() {});
-                          //                                                                     },
-                          //                                                                     child: Container(
-                          //                                                                       width: width,
-                          //                                                                       // height: height*0.05,
-                          //                                                                       decoration: BoxDecoration(
-                          //                                                                         color: primaryColor.withOpacity(1.0),
-                          //                                                                         borderRadius: BorderRadius.circular(10.0),
-                          //                                                                       ),
-                          //                                                                       child: Padding(
-                          //                                                                         padding: const EdgeInsets.all(8.0),
-                          //                                                                         child: Row(
-                          //                                                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          //                                                                           children: [
-                          //                                                                             Text(
-                          //                                                                               storeRoomController.ingredientsBeveragesList[i]["ingredient"],
-                          //                                                                               style: TextStyle(
-                          //                                                                                 fontFamily: "Lexand",
-                          //                                                                                 fontSize: height * 0.013,
-                          //                                                                                 fontWeight: FontWeight.w700,
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                             InkWell(
-                          //                                                                               onTap: () {
-                          //                                                                                 showDialog(
-                          //                                                                                   context: context,
-                          //                                                                                   builder: (context) {
-                          //                                                                                     return AlertDialog(
-                          //                                                                                       // insetPadding: EdgeInsets.all(0.0),
-                          //                                                                                       content: SizedBox(
-                          //                                                                                         // width: double.maxFinite,
-                          //                                                                                         height: height * 0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                                                                         child: Column(
-                          //                                                                                           children: [
-                          //                                                                                             Row(
-                          //                                                                                               children: [
-                          //                                                                                                 InkWell(
-                          //                                                                                                   onTap: () {
-                          //                                                                                                     Navigator.pop(context);
-                          //                                                                                                     // scaffoldkey.currentState!.openDrawer();
-                          //                                                                                                   },
-                          //                                                                                                   child: Icon(
-                          //                                                                                                     Icons.arrow_back_ios_rounded,
-                          //                                                                                                     size: height * 0.039,
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                                 Expanded(
-                          //                                                                                                   child: Text(
-                          //                                                                                                     "Pick your ingredients from the table.",
-                          //                                                                                                     style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.018, fontWeight: FontWeight.w500),
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                               ],
-                          //                                                                                             ),
-                          //                                                                                             SizedBox(height: height * 0.02),
-                          //                                                                                             SizedBox(
-                          //                                                                                               height: height * 0.05,
-                          //                                                                                               child: TextFormField(
-                          //                                                                                                 style: TextStyle(
-                          //                                                                                                   fontFamily: "Lexand",
-                          //                                                                                                   fontSize: height * 0.018,
-                          //                                                                                                   fontWeight: FontWeight.w500,
-                          //                                                                                                 ),
-                          //                                                                                                 controller: ingredientsEditController = TextEditingController(text: storeRoomController.ingredientsBeveragesList[i]["ingredient"]),
-                          //                                                                                                 decoration: InputDecoration(
-                          //                                                                                                   // suffixIcon: Padding(
-                          //                                                                                                   //   padding: const EdgeInsets.all(8.0),
-                          //                                                                                                   //   child: Image.asset(
-                          //                                                                                                   //     "assets/user_icon.png",
-                          //                                                                                                   //     height: height * 0.02,
-                          //                                                                                                   //   ),
-                          //                                                                                                   // ),
-                          //                                                                                                   contentPadding: const EdgeInsets.only(left: 16.0),
-                          //                                                                                                   label: Text(
-                          //                                                                                                     "Ingredients",
-                          //                                                                                                     style: TextStyle(
-                          //                                                                                                       fontFamily: "Lexand",
-                          //                                                                                                       fontSize: height * 0.018,
-                          //                                                                                                       fontWeight: FontWeight.w300,
-                          //                                                                                                     ),
-                          //                                                                                                   ),
-                          //                                                                                                   floatingLabelStyle: const TextStyle(
-                          //                                                                                                     fontFamily: "Lexand",
-                          //                                                                                                     fontWeight: FontWeight.w300,
-                          //                                                                                                   ),
-                          //                                                                                                   border: OutlineInputBorder(
-                          //                                                                                                     borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                                     borderSide: const BorderSide(width: 1.5),
-                          //                                                                                                   ),
-                          //                                                                                                   disabledBorder: OutlineInputBorder(
-                          //                                                                                                     borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                                     borderSide: const BorderSide(width: 1.5),
-                          //                                                                                                   ),
-                          //                                                                                                   enabledBorder: OutlineInputBorder(
-                          //                                                                                                     borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                                     borderSide: BorderSide(
-                          //                                                                                                       color: borderColor.withOpacity(1.0),
-                          //                                                                                                       width: 1.5,
-                          //                                                                                                     ),
-                          //                                                                                                   ),
-                          //                                                                                                   focusedBorder: OutlineInputBorder(
-                          //                                                                                                     borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                                     borderSide: const BorderSide(width: 1.5),
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                                 onChanged: (value) {
-                          //                                                                                                   setState(() {});
-                          //                                                                                                 },
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                             SizedBox(height: height * 0.02),
-                          //                                                                                             Container(
-                          //                                                                                               height: height * 0.05,
-                          //                                                                                               decoration: BoxDecoration(
-                          //                                                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                                 border: Border.all(
-                          //                                                                                                   color: borderColor.withOpacity(1.0),
-                          //                                                                                                   width: 1.5,
-                          //                                                                                                 ),
-                          //                                                                                               ),
-                          //                                                                                               child: DropdownButtonFormField<String>(
-                          //                                                                                                 hint: Text(
-                          //                                                                                                   "Select measurement",
-                          //                                                                                                   style: TextStyle(
-                          //                                                                                                     fontFamily: "Lexand",
-                          //                                                                                                     fontSize: height * 0.018,
-                          //                                                                                                     fontWeight: FontWeight.w300,
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                                 padding: const EdgeInsets.only(left: 10, bottom: 5),
-                          //                                                                                                 value: selectedUnit,
-                          //                                                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                                 onChanged: (String? newValue) {
-                          //                                                                                                   setState(() {
-                          //                                                                                                     selectedUnit = newValue!;
-                          //                                                                                                   });
-                          //                                                                                                 },
-                          //                                                                                                 items: <String>['kg', 'litre', 'unit'].map<DropdownMenuItem<String>>(
-                          //                                                                                                   (String value) {
-                          //                                                                                                     return DropdownMenuItem<String>(
-                          //                                                                                                       value: value,
-                          //                                                                                                       child: Padding(
-                          //                                                                                                         padding: EdgeInsets.symmetric(horizontal: width * 0.04),
-                          //                                                                                                         child: Text(
-                          //                                                                                                           value,
-                          //                                                                                                           style: TextStyle(
-                          //                                                                                                             fontFamily: "Lexand",
-                          //                                                                                                             fontSize: height * 0.018,
-                          //                                                                                                             fontWeight: FontWeight.w300,
-                          //                                                                                                           ),
-                          //                                                                                                         ),
-                          //                                                                                                       ),
-                          //                                                                                                     );
-                          //                                                                                                   },
-                          //                                                                                                 ).toList(),
-                          //                                                                                                 decoration: InputDecoration(
-                          //                                                                                                   border: InputBorder.none,
-                          //                                                                                                   contentPadding: EdgeInsets.zero,
-                          //                                                                                                   floatingLabelStyle: TextStyle(
-                          //                                                                                                     fontFamily: "Lexand",
-                          //                                                                                                     fontSize: height * 0.013,
-                          //                                                                                                     fontWeight: FontWeight.w300,
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                                 // Aligns the dropdown value vertically centered within the container
-                          //                                                                                                 alignment: Alignment.topCenter,
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                             SizedBox(
-                          //                                                                                               height: height * 0.02,
-                          //                                                                                             ),
-                          //                                                                                             Row(
-                          //                                                                                               children: [
-                          //                                                                                                 Expanded(
-                          //                                                                                                   child: InkWell(
-                          //                                                                                                     onTap: () {
-                          //                                                                                                       Navigator.pop(context);
-                          //                                                                                                     },
-                          //                                                                                                     child: Padding(
-                          //                                                                                                       padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                                       child: Container(
-                          //                                                                                                         height: height * 0.04,
-                          //                                                                                                         width: width,
-                          //                                                                                                         decoration: BoxDecoration(
-                          //                                                                                                           color: buttonColor.withOpacity(1.0),
-                          //                                                                                                           borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                                         ),
-                          //                                                                                                         child: Padding(
-                          //                                                                                                           padding: const EdgeInsets.all(8.0),
-                          //                                                                                                           child: Center(
-                          //                                                                                                             child: Text(
-                          //                                                                                                               "Cancel",
-                          //                                                                                                               style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                                             ),
-                          //                                                                                                           ),
-                          //                                                                                                         ),
-                          //                                                                                                       ),
-                          //                                                                                                     ),
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                                 Expanded(
-                          //                                                                                                   child: InkWell(
-                          //                                                                                                     onTap: () async {
-                          //                                                                                                       await storeRoomController.storRoomingrediantEdit(
-                          //                                                                                                         ingredientsEditController.text,
-                          //                                                                                                         storeRoomController.ingredientsBeveragesList[i]["ingredientId"],
-                          //                                                                                                         storeRoomController.ingredientsBeveragesList[i]["isChecked"],
-                          //                                                                                                         selectedUnit,
-                          //                                                                                                       );
-                          //                                                                                                       setState(() {});
-                          //                                                                                                       Navigator.pop(context);
-                          //                                                                                                       await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                                                                                     },
-                          //                                                                                                     child: Padding(
-                          //                                                                                                       padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                                       child: Container(
-                          //                                                                                                         height: height * 0.04,
-                          //                                                                                                         width: width,
-                          //                                                                                                         decoration: BoxDecoration(
-                          //                                                                                                           color: buttonColor.withOpacity(1.0),
-                          //                                                                                                           borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                                         ),
-                          //                                                                                                         child: Padding(
-                          //                                                                                                           padding: const EdgeInsets.all(8.0),
-                          //                                                                                                           child: Center(
-                          //                                                                                                             child: Text(
-                          //                                                                                                               "Save",
-                          //                                                                                                               style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                                             ),
-                          //                                                                                                           ),
-                          //                                                                                                         ),
-                          //                                                                                                       ),
-                          //                                                                                                     ),
-                          //                                                                                                   ),
-                          //                                                                                                 )
-                          //                                                                                               ],
-                          //                                                                                             )
-                          //                                                                                           ],
-                          //                                                                                         ),
-                          //                                                                                       ),
-                          //                                                                                     );
-                          //                                                                                   },
-                          //                                                                                 );
-                          //                                                                               },
-                          //                                                                               child: const Icon(
-                          //                                                                                 Icons.edit,
-                          //                                                                                 size: 20,
-                          //                                                                                 color: Colors.black,
-                          //                                                                               ),
-                          //                                                                             )
-                          //                                                                           ],
-                          //                                                                         ),
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                   SizedBox(height: height * 0.01),
-                          //                                                                 ],
-                          //                                                               ),
-                          //                                                             );
-                          //                                                           },
-                          //                                                         ),
-                          //                                                       ),
-                          //                                                     ),
-                          //                                                   )
-                          //                                                 : Expanded(
-                          //                                                     flex: 3,
-                          //                                                     child: SingleChildScrollView(
-                          //                                                       child: SizedBox(
-                          //                                                         height: height * 0.7,
-                          //                                                         child: ListView.builder(
-                          //                                                           // shrinkWrap: true,
-                          //                                                           itemCount: storeRoomController.ingredientsDairyList.length,
-                          //                                                           itemBuilder: (
-                          //                                                             context,
-                          //                                                             i,
-                          //                                                           ) {
-                          //                                                             return Padding(
-                          //                                                               padding: const EdgeInsets.all(8.0),
-                          //                                                               child: Column(
-                          //                                                                 crossAxisAlignment: CrossAxisAlignment.start,
-                          //                                                                 children: [
-                          //                                                                   InkWell(
-                          //                                                                     onTap: () {
-                          //                                                                       setState(() {});
-                          //                                                                     },
-                          //                                                                     child: Container(
-                          //                                                                       width: width,
-                          //                                                                       // height: height*0.05,
-                          //                                                                       decoration: BoxDecoration(
-                          //                                                                         color: primaryColor.withOpacity(1.0),
-                          //                                                                         borderRadius: BorderRadius.circular(10.0),
-                          //                                                                       ),
-                          //                                                                       child: Padding(
-                          //                                                                         padding: const EdgeInsets.all(8.0),
-                          //                                                                         child: Row(
-                          //                                                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          //                                                                           children: [
-                          //                                                                             Text(
-                          //                                                                               storeRoomController.ingredientsDairyList[i]["ingredient"],
-                          //                                                                               style: TextStyle(
-                          //                                                                                 fontFamily: "Lexand",
-                          //                                                                                 fontSize: height * 0.013,
-                          //                                                                                 fontWeight: FontWeight.w700,
-                          //                                                                               ),
-                          //                                                                             ),
-                          //                                                                             InkWell(
-                          //                                                                               onTap: () {
-                          //                                                                                 showDialog(
-                          //                                                                                   context: context,
-                          //                                                                                   builder: (context) {
-                          //                                                                                     return AlertDialog(
-                          //                                                                                       // insetPadding: EdgeInsets.all(0.0),
-                          //                                                                                       content: SizedBox(
-                          //                                                                                         // width: double.maxFinite,
-                          //                                                                                         height: height * 0.3, // Ensure the AlertDialog content has a fixed width
-                          //                                                                                         child: Column(
-                          //                                                                                           children: [
-                          //                                                                                             Row(
-                          //                                                                                               children: [
-                          //                                                                                                 InkWell(
-                          //                                                                                                   onTap: () {
-                          //                                                                                                     Navigator.pop(context);
-                          //                                                                                                     // scaffoldkey.currentState!.openDrawer();
-                          //                                                                                                   },
-                          //                                                                                                   child: Icon(
-                          //                                                                                                     Icons.arrow_back_ios_rounded,
-                          //                                                                                                     size: height * 0.039,
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                                 Expanded(
-                          //                                                                                                   child: Text(
-                          //                                                                                                     "Pick your ingredients from the table.",
-                          //                                                                                                     style: TextStyle(fontFamily: "Lexand", fontSize: height * 0.018, fontWeight: FontWeight.w500),
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                               ],
-                          //                                                                                             ),
-                          //                                                                                             SizedBox(height: height * 0.02),
-                          //                                                                                             SizedBox(
-                          //                                                                                               height: height * 0.05,
-                          //                                                                                               child: TextFormField(
-                          //                                                                                                 style: TextStyle(
-                          //                                                                                                   fontFamily: "Lexand",
-                          //                                                                                                   fontSize: height * 0.018,
-                          //                                                                                                   fontWeight: FontWeight.w500,
-                          //                                                                                                 ),
-                          //                                                                                                 controller: ingredientsEditController = TextEditingController(text: storeRoomController.ingredientsDairyList[i]["ingredient"]),
-                          //                                                                                                 decoration: InputDecoration(
-                          //                                                                                                   // suffixIcon: Padding(
-                          //                                                                                                   //   padding: const EdgeInsets.all(8.0),
-                          //                                                                                                   //   child: Image.asset(
-                          //                                                                                                   //     "assets/user_icon.png",
-                          //                                                                                                   //     height: height * 0.02,
-                          //                                                                                                   //   ),
-                          //                                                                                                   // ),
-                          //                                                                                                   contentPadding: const EdgeInsets.only(left: 16.0),
-                          //                                                                                                   label: Text(
-                          //                                                                                                     "Ingredients",
-                          //                                                                                                     style: TextStyle(
-                          //                                                                                                       fontFamily: "Lexand",
-                          //                                                                                                       fontSize: height * 0.018,
-                          //                                                                                                       fontWeight: FontWeight.w300,
-                          //                                                                                                     ),
-                          //                                                                                                   ),
-                          //                                                                                                   floatingLabelStyle: const TextStyle(
-                          //                                                                                                     fontFamily: "Lexand",
-                          //                                                                                                     fontWeight: FontWeight.w300,
-                          //                                                                                                   ),
-                          //                                                                                                   border: OutlineInputBorder(
-                          //                                                                                                     borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                                     borderSide: const BorderSide(width: 1.5),
-                          //                                                                                                   ),
-                          //                                                                                                   disabledBorder: OutlineInputBorder(
-                          //                                                                                                     borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                                     borderSide: const BorderSide(width: 1.5),
-                          //                                                                                                   ),
-                          //                                                                                                   enabledBorder: OutlineInputBorder(
-                          //                                                                                                     borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                                     borderSide: BorderSide(
-                          //                                                                                                       color: borderColor.withOpacity(1.0),
-                          //                                                                                                       width: 1.5,
-                          //                                                                                                     ),
-                          //                                                                                                   ),
-                          //                                                                                                   focusedBorder: OutlineInputBorder(
-                          //                                                                                                     borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                                     borderSide: const BorderSide(width: 1.5),
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                                 onChanged: (value) {
-                          //                                                                                                   setState(() {});
-                          //                                                                                                 },
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                             SizedBox(height: height * 0.02),
-                          //                                                                                             Container(
-                          //                                                                                               height: height * 0.05,
-                          //                                                                                               decoration: BoxDecoration(
-                          //                                                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                                 border: Border.all(
-                          //                                                                                                   color: borderColor.withOpacity(1.0),
-                          //                                                                                                   width: 1.5,
-                          //                                                                                                 ),
-                          //                                                                                               ),
-                          //                                                                                               child: DropdownButtonFormField<String>(
-                          //                                                                                                 hint: Text(
-                          //                                                                                                   "Select measurement",
-                          //                                                                                                   style: TextStyle(
-                          //                                                                                                     fontFamily: "Lexand",
-                          //                                                                                                     fontSize: height * 0.018,
-                          //                                                                                                     fontWeight: FontWeight.w300,
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                                 padding: const EdgeInsets.only(left: 10, bottom: 5),
-                          //                                                                                                 value: selectedUnit,
-                          //                                                                                                 borderRadius: BorderRadius.circular(30.0),
-                          //                                                                                                 onChanged: (String? newValue) {
-                          //                                                                                                   setState(() {
-                          //                                                                                                     selectedUnit = newValue!;
-                          //                                                                                                   });
-                          //                                                                                                 },
-                          //                                                                                                 items: <String>['kg', 'litre', 'unit'].map<DropdownMenuItem<String>>(
-                          //                                                                                                   (String value) {
-                          //                                                                                                     return DropdownMenuItem<String>(
-                          //                                                                                                       value: value,
-                          //                                                                                                       child: Padding(
-                          //                                                                                                         padding: EdgeInsets.symmetric(horizontal: width * 0.04),
-                          //                                                                                                         child: Text(
-                          //                                                                                                           value,
-                          //                                                                                                           style: TextStyle(
-                          //                                                                                                             fontFamily: "Lexand",
-                          //                                                                                                             fontSize: height * 0.018,
-                          //                                                                                                             fontWeight: FontWeight.w300,
-                          //                                                                                                           ),
-                          //                                                                                                         ),
-                          //                                                                                                       ),
-                          //                                                                                                     );
-                          //                                                                                                   },
-                          //                                                                                                 ).toList(),
-                          //                                                                                                 decoration: InputDecoration(
-                          //                                                                                                   border: InputBorder.none,
-                          //                                                                                                   contentPadding: EdgeInsets.zero,
-                          //                                                                                                   floatingLabelStyle: TextStyle(
-                          //                                                                                                     fontFamily: "Lexand",
-                          //                                                                                                     fontSize: height * 0.013,
-                          //                                                                                                     fontWeight: FontWeight.w300,
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                                 // Aligns the dropdown value vertically centered within the container
-                          //                                                                                                 alignment: Alignment.topCenter,
-                          //                                                                                               ),
-                          //                                                                                             ),
-                          //                                                                                             SizedBox(
-                          //                                                                                               height: height * 0.02,
-                          //                                                                                             ),
-                          //                                                                                             Row(
-                          //                                                                                               children: [
-                          //                                                                                                 Expanded(
-                          //                                                                                                   child: InkWell(
-                          //                                                                                                     onTap: () {
-                          //                                                                                                       Navigator.pop(context);
-                          //                                                                                                     },
-                          //                                                                                                     child: Padding(
-                          //                                                                                                       padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                                       child: Container(
-                          //                                                                                                         height: height * 0.04,
-                          //                                                                                                         width: width,
-                          //                                                                                                         decoration: BoxDecoration(
-                          //                                                                                                           color: buttonColor.withOpacity(1.0),
-                          //                                                                                                           borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                                         ),
-                          //                                                                                                         child: Padding(
-                          //                                                                                                           padding: const EdgeInsets.all(8.0),
-                          //                                                                                                           child: Center(
-                          //                                                                                                             child: Text(
-                          //                                                                                                               "Cancel",
-                          //                                                                                                               style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                                             ),
-                          //                                                                                                           ),
-                          //                                                                                                         ),
-                          //                                                                                                       ),
-                          //                                                                                                     ),
-                          //                                                                                                   ),
-                          //                                                                                                 ),
-                          //                                                                                                 Expanded(
-                          //                                                                                                   child: InkWell(
-                          //                                                                                                     onTap: () async {
-                          //                                                                                                       await storeRoomController.storRoomingrediantEdit(
-                          //                                                                                                         ingredientsEditController.text,
-                          //                                                                                                         storeRoomController.ingredientsDairyList[i]["ingredientId"],
-                          //                                                                                                         storeRoomController.ingredientsDairyList[i]["isChecked"],
-                          //                                                                                                         selectedUnit,
-                          //                                                                                                       );
-                          //                                                                                                       setState(() {});
-                          //                                                                                                       Navigator.pop(context);
-                          //                                                                                                       await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                          //                                                                                                     },
-                          //                                                                                                     child: Padding(
-                          //                                                                                                       padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                          //                                                                                                       child: Container(
-                          //                                                                                                         height: height * 0.04,
-                          //                                                                                                         width: width,
-                          //                                                                                                         decoration: BoxDecoration(
-                          //                                                                                                           color: buttonColor.withOpacity(1.0),
-                          //                                                                                                           borderRadius: BorderRadius.circular(15.0),
-                          //                                                                                                         ),
-                          //                                                                                                         child: Padding(
-                          //                                                                                                           padding: const EdgeInsets.all(8.0),
-                          //                                                                                                           child: Center(
-                          //                                                                                                             child: Text(
-                          //                                                                                                               "Save",
-                          //                                                                                                               style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                          //                                                                                                             ),
-                          //                                                                                                           ),
-                          //                                                                                                         ),
-                          //                                                                                                       ),
-                          //                                                                                                     ),
-                          //                                                                                                   ),
-                          //                                                                                                 )
-                          //                                                                                               ],
-                          //                                                                                             )
-                          //                                                                                           ],
-                          //                                                                                         ),
-                          //                                                                                       ),
-                          //                                                                                     );
-                          //                                                                                   },
-                          //                                                                                 );
-                          //                                                                               },
-                          //                                                                               child: const Icon(
-                          //                                                                                 Icons.edit,
-                          //                                                                                 size: 20,
-                          //                                                                                 color: Colors.black,
-                          //                                                                               ),
-                          //                                                                             )
-                          //                                                                           ],
-                          //                                                                         ),
-                          //                                                                       ),
-                          //                                                                     ),
-                          //                                                                   ),
-                          //                                                                   SizedBox(height: height * 0.01),
-                          //                                                                 ],
-                          //                                                               ),
-                          //                                                             );
-                          //                                                           },
-                          //                                                         ),
-                          //                                                       ),
-                          //                                                     ),
-                          //                                                   )
-                        
+                                )),
+                          )
                         ],
                       ),
               ],
@@ -5260,81 +1356,4 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
       ),
     );
   }
-
-  // Widget drawerContent(
-  //     {String? title, IconData? icon, GestureTapCallback? onTap}) {
-  //   var height = MediaQuery.of(context).size.height;
-  //   var width = MediaQuery.of(context).size.width;
-  //   return Material(
-  //     color: Colors.transparent,
-  //     child: InkWell(
-  //       onTap: onTap,
-  //       child: Container(
-  //         padding: const EdgeInsets.all(10),
-  //         child: Row(
-  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //           children: [
-  //             Text(
-  //               title!,
-  //               style: TextStyle(
-  //                   fontFamily: "Lexand",
-  //                   fontSize: height * 0.008,
-  //                   fontWeight: FontWeight.w700),
-  //             ),
-  //             // assetImageHelper(image: image, width: 24, height: 24)
-  //             Icon(
-  //               icon,
-  //               size: 24,
-  //               color: primaryColor.withOpacity(1.0),
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  // Widget buildIngredientListView(
-  //     List<dynamic> ingredients, double height, double width) {
-  //   return Container(
-  //     height: height * 0.5,
-  //     child: ListView.builder(
-  //       // shrinkWrap: true,
-  //       itemCount: ingredients.length,
-  //       itemBuilder: (context, index) {
-  //         return Padding(
-  //           padding: EdgeInsets.symmetric(
-  //               horizontal: width * 0.04, vertical: height * 0.005),
-  //           child: Container(
-  //             height: height * 0.05,
-  //             decoration: BoxDecoration(
-  //               color: primaryColor,
-  //               borderRadius: BorderRadius.circular(3.0),
-  //             ),
-  //             child: Align(
-  //               alignment: Alignment.centerLeft,
-  //               child: Padding(
-  //                 padding: EdgeInsets.symmetric(horizontal: width * 0.03),
-  //                 child: Text(
-  //                   ingredients[index].name,
-  //                   style: TextStyle(
-  //                     fontFamily: "Lexand",
-  //                     fontSize: height * 0.013,
-  //                     fontWeight: FontWeight.w700,
-  //                     color: Colors.white,
-  //                   ),
-  //                 ),
-  //               ),
-  //             ),
-  //           ),
-  //         );
-  //       },
-  //     ),
-  //   );
-  // }
-
-// Function to check if at least one ingredient is selected
-  // bool isAtLeastOneIngredientSelected(List<bool> isCheckedList) {
-  //   return isCheckedList.contains(true);
-  // }
 }

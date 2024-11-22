@@ -31,8 +31,10 @@ class GroupsController extends GetxController {
 
       final response = await http.post(Uri.parse(endPoint['selectingStock']),
           // contentType: "application/json",
-          headers: {'Accept': 'application/json',
-            'Cookie':'authorization_token=$token'},
+          headers: {
+            'Accept': 'application/json',
+            'Cookie': 'authorization_token=$token'
+          },
           body: body);
 
       // Check if the response is successful
@@ -80,13 +82,13 @@ class GroupsController extends GetxController {
     }
   }
 
-
-  Future<dynamic> downloadStockCard(String from_date,String to_date) async {
+  Future<dynamic> downloadStockCard(String from_date, String to_date) async {
     try {
       // LoadingWidget.startLoadingWidget();
       var userId = await storage.read(key: "userId");
       var token = await storage.read(key: "token");
-      var body = json.encode({"userId": userId, "from_date": from_date,"to_date":to_date});
+      var body = json.encode(
+          {"userId": userId, "from_date": from_date, "to_date": to_date});
 
       if (kDebugMode) {
         print(";;;;;;;;;;;;;;;;;$body");
@@ -115,5 +117,4 @@ class GroupsController extends GetxController {
       return null;
     }
   }
-
 }

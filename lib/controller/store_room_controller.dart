@@ -31,22 +31,29 @@ class StoreRoomController extends GetxController {
   RxList<Stocks> stockList = <Stocks>[].obs;
 
   final storage = const FlutterSecureStorage();
+
   Future<dynamic> stroreRoomingredientsList(String category) async {
+    print("DEBUG: category passed to function: $category");
     ingredientList.clear();
     try {
       // LoadingWidget.startLoadingWidget();
       var userId = await storage.read(key: "userId");
+      print("DEBUG: userId: $userId");
       var token = await storage.read(key: "token");
+      print("DEBUG: token: $token");
       var body = json.encode({"userId": userId, "category": category});
+      print("DEBUG: Request body: $body");
 
       if (kDebugMode) {
         print(";;;;;;;;;;;;;;;;;$body");
       }
+      print("DEBUG: category passed to storeRoomingredientsList: $category");
 
       final response = await http.post(Uri.parse(endPoint['ingredientsList']),
           // contentType: "application/json",
           headers: {
             'Accept': 'application/json',
+            'Content-Type': 'application/json',
             'Cookie': 'authorization_token=$token'
           },
           body: body);
@@ -160,8 +167,7 @@ class StoreRoomController extends GetxController {
           for (var element in data) {
             modelList.add(IngredientModels.fromJson(element));
           }
-        } else {
-        }
+        } else {}
         // print(result["data"]["categoryListing"]["Powders"]);
         // ingredientsSpicesList = result["data"]["categoryListing"]["Spices"];
         // print(result["data"]["categoryListing"]["Spices"]);
@@ -182,12 +188,28 @@ class StoreRoomController extends GetxController {
     }
   }
 
-  Future<dynamic> storRoomingrediantEdit(String ingredient, String ingredientId,
-      bool isChecked, String measurement) async {
+  Future<dynamic> storRoomingrediantEdit({
+    required String ingredient,
+    required String ingredientId,
+    required bool isChecked,
+    required String? measurement,
+    required bool isLoose,
+    required bool isCarton,
+    required bool isBag,
+    required String packageWeight,
+    required String unitPrice,
+    required String storageLocation,
+  }) async {
     try {
-      // LoadingWidget.startLoadingWidget();
       var userId = await storage.read(key: "userId");
       var token = await storage.read(key: "token");
+
+      // Validate measurement
+      if (measurement == null || measurement.isEmpty) {
+        print("Measurement is null or empty. Aborting request.");
+        return null;
+      }
+
       var body = json.encode({
         "userId": userId,
         "data": [
@@ -196,126 +218,147 @@ class StoreRoomController extends GetxController {
             "ingredient": ingredient,
             "ingredientId": ingredientId,
             "measurement": measurement,
-            "measurements": [
-              {"measurement_id": "4", "measurement": "kg"},
-              {"measurement_id": "5", "measurement": "units"},
-              {"measurement_id": "6", "measurement": "litres"}
-            ]
+            "isLoose": isLoose,
+            "isCarton": isCarton,
+            "isBag": isBag,
+            "packageWeight": packageWeight,
+            "unitPrice": unitPrice,
+            "storageLocation": storageLocation,
+            // Include any additional fields as needed
           }
         ]
       });
 
-      if (kDebugMode) {
-        print(";;;;;;;;;;;;;;;;;$body");
-      }
-        print(Uri.parse(endPoint['editIngredient']));
+      print("Request Body: $body");
+      print("Endpoint: ${Uri.parse(endPoint['editIngredient'])}");
 
-      final response = await http.post(Uri.parse(endPoint['editIngredient']),
-          // contentType: "application/json",
-          headers: {
-            'Accept': 'application/json',
-            'Cookie': 'authorization_token=$token'
-          },
-          body: body);
-        var result = jsonDecode(response.body);
-print(";;;;;;;;;;;;;;;;;$result");
-      // Check if the response is successful
+      final response = await http.post(
+        Uri.parse(endPoint['editIngredient']),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cookie': 'authorization_token=$token'
+        },
+        body: body,
+      );
+
+      var result = jsonDecode(response.body);
+      print("Response: $result");
+
       if (response.statusCode == 200) {
-
         return result;
       } else {
-        // LoadingWidget.endLoadingWidget();
-        // PopupDialogs.displayErrorOnlyMessage(result["message"]);
+        print("Error Response: ${response.body}");
         return null;
       }
     } catch (error) {
-      if (kDebugMode) {
-        print(error);
-      }
-      // LoadingWidget.endLoadingWidget();
-      // PopupDialogs.displayErrorOnlyMessage(StringHelper.aPI_Crashed);
+      print("Error: $error");
       return null;
     }
   }
 
-  Future<dynamic> createIngredient(
-      String category, String ingredient, String measurement) async {
+  Future<dynamic> createIngredient({
+    required String category,
+    required String ingredient,
+    required String measurement,
+    required bool isLoose,
+    required bool isCarton,
+    required bool isBag,
+    required String packageWeight,
+    required String unitPrice,
+    required String storageLocation,
+  }) async {
     try {
-      // LoadingWidget.startLoadingWidget();
       var userId = await storage.read(key: "userId");
       var token = await storage.read(key: "token");
 
-
-
-      var innerArray = [];
-
-      innerArray.add({
+      final body = {
+        "userId": userId,
+        "category": category,
+        "ingredientsData": [
+          {
             "isChecked": true,
             "ingredient": ingredient,
-            "measurement": measurement
-          });
-      for(int i=0;i<ingredientList.length;i++){
-        var map ={};
-        map["isChecked"] = ingredientList[i].isChecked;
-        map["ingredient"] = ingredientList[i].ingredient;
-        map["ingredientId"] = ingredientList[i].ingredientId;
-        map["measurement"] = ingredientList[i].measurement;
-        map["measurements"] = ingredientList[i].measurements;
-        innerArray.add(map);
-      }
+            "measurement": measurement,
+            "isLoose": isLoose,
+            "isCarton": isCarton,
+            "isBag": isBag,
+            "packageWeight": packageWeight,
+            "unitPrice": unitPrice,
+            "storageLocation": storageLocation,
+          }
+        ]
+      };
 
+      print("Request Body: $body");
 
-      var body = json.encode({
-        "userId": userId,
-        "category": category,
-        "ingredientsData": innerArray
-      });
+      final response = await http.post(
+        Uri.parse(endPoint['createIngredient']),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cookie': 'authorization_token=$token',
+        },
+        body: json.encode(body),
+      );
 
-
-      if (kDebugMode) {
-        print(";;;;;;;;;;;;;;;;;$body");
-        print(Uri.parse(endPoint['createIngredient']));
-      }
-
-      final response = await http.post(Uri.parse(endPoint['createIngredient']),
-          // contentType: "application/json",
-          headers: {
-            'Accept': 'application/json',
-            'Cookie': 'authorization_token=$token'
-          },
-          body: body);
-
-      // Check if the response is successful
       if (response.statusCode == 200) {
-        var result = jsonDecode(response.body);
-
-        return result;
+        return jsonDecode(response.body);
       } else {
-        // LoadingWidget.endLoadingWidget();
-        // PopupDialogs.displayErrorOnlyMessage(result["message"]);
+        print("Error Response: ${response.body}");
         return null;
       }
     } catch (error) {
-      if (kDebugMode) {
-        print(error);
-      }
-      // LoadingWidget.endLoadingWidget();
-      // PopupDialogs.displayErrorOnlyMessage(StringHelper.aPI_Crashed);
+      print("Error: $error");
       return null;
     }
   }
 
+  Future<dynamic> updateIngredientBarcode({
+    required String ingredientId,
+    required String barcode,
+  }) async {
+    try {
+      var userId = await storage.read(key: "userId");
+      var token = await storage.read(key: "token");
 
-  Future<dynamic> saveIngredientAll(
-      String category) async {
+      final body = {
+        "userId": userId,
+        "ingredientId": ingredientId,
+        "barcode": barcode,
+      };
+
+      final response = await http.post(
+        Uri.parse(endPoint['updateIngredientBarcode']),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cookie': 'authorization_token=$token',
+        },
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print("Error Response: ${response.body}");
+        return null;
+      }
+    } catch (error) {
+      print("Error: $error");
+      return null;
+    }
+  }
+
+  Future<dynamic> saveIngredientAll(String category) async {
     try {
       // LoadingWidget.startLoadingWidget();
       var userId = await storage.read(key: "userId");
       var token = await storage.read(key: "token");
 
       var innerArray = [];
-      for(int i=0;i<ingredientList.length;i++){
-        var map ={};
+      for (int i = 0; i < ingredientList.length; i++) {
+        var map = {};
         map["isChecked"] = ingredientList[i].isChecked;
         map["ingredient"] = ingredientList[i].ingredient;
         map["ingredientId"] = ingredientList[i].ingredientId;
@@ -324,12 +367,8 @@ print(";;;;;;;;;;;;;;;;;$result");
         innerArray.add(map);
       }
 
-
-      var body = json.encode({
-        "userId": userId,
-        "category": category,
-        "data": innerArray
-      });
+      var body = json
+          .encode({"userId": userId, "category": category, "data": innerArray});
 
       if (kDebugMode) {
         print(";;;;;;;;;;;;;;;;;$body");
@@ -343,12 +382,11 @@ print(";;;;;;;;;;;;;;;;;$result");
           },
           body: body);
 
-        var result = jsonDecode(response.body);
-        print("sfsdfasdfasd");
-        print(result);
+      var result = jsonDecode(response.body);
+      print("sfsdfasdfasd");
+      print(result);
       // Check if the response is successful
       if (response.statusCode == 200) {
-
         return result;
       } else {
         // LoadingWidget.endLoadingWidget();
@@ -364,7 +402,6 @@ print(";;;;;;;;;;;;;;;;;$result");
       return null;
     }
   }
-
 
   Future<dynamic> saveIngredient(body) async {
     try {
@@ -434,12 +471,12 @@ print(";;;;;;;;;;;;;;;;;$result");
         }
         print("${stockListModel.toJson()} ```````````");
         return result;
-      } else if(response.statusCode == 400) {
+      } else if (response.statusCode == 400) {
         print("${response.statusCode} --------> statuscode");
-         StockListModel stockListModel = await StockListModel.fromJson(result);
+        StockListModel stockListModel = await StockListModel.fromJson(result);
         print("${stockListModel.toJson()} -----?");
-    
-        var data= jsonEncode(stockListModel);
+
+        var data = jsonEncode(stockListModel);
 
         print("${data} --------aaaaaaaaa");
 

@@ -202,6 +202,7 @@ class _StockCardScreenState extends State<StockCardScreen> {
                           onTap: () {
                             selectedItem = index;
                             categoryName = groups[index].name;
+                            print("DEBUG: Selected category is $categoryName");
                             // isCheckedList[index] = !isCheckedList[index];
                             setState(() {});
                           },
@@ -560,8 +561,9 @@ class _StockCardScreenState extends State<StockCardScreen> {
                                                         [categoryName]["stocks"]
                                                     .length >
                                                 0) {
-                                                await generateInvoice(result["data"]["category"]
-                                                        [categoryName]["stocks"]);
+                                          await generateInvoice(result["data"]
+                                                  ["category"][categoryName]
+                                              ["stocks"]);
                                         } else {
                                           AnimatedSnackBar.material(
                                             'No Data Found',
@@ -728,6 +730,7 @@ class _StockCardScreenState extends State<StockCardScreen> {
                           onTap: () {
                             selectedItem = index;
                             categoryName = groups[index].name;
+                            print("DEBUG: Selected category is $categoryName");
                             // isCheckedList[index] = !isCheckedList[index];
                             setState(() {});
                           },
@@ -819,8 +822,6 @@ class _StockCardScreenState extends State<StockCardScreen> {
     );
   }
 
-
-
   Future<void> generateInvoice(List<dynamic>? data) async {
     //Create a PDF document.
     final PdfDocument document = PdfDocument();
@@ -830,7 +831,7 @@ class _StockCardScreenState extends State<StockCardScreen> {
     final Size pageSize = page.getClientSize();
     String? currency = await storage.read(key: "currency");
 
-    final PdfGrid grid = getGrid(data,currency);
+    final PdfGrid grid = getGrid(data, currency);
     //Draw the header section by creating text element
     // final PdfLayoutResult result = await drawHeader(page, pageSize, grid, data);
     //Draw grid
@@ -842,15 +843,16 @@ class _StockCardScreenState extends State<StockCardScreen> {
     //Dispose the document.
     document.dispose();
     //Save and launch the file.
-    await saveAndLaunchFile(bytes, "${DateTime.now().microsecondsSinceEpoch}.pdf");
+    await saveAndLaunchFile(
+        bytes, "${DateTime.now().microsecondsSinceEpoch}.pdf");
     // if (type == "share") {
     //   Share.shareXFiles([XFile(file.path)], text: '${data.name}');
     // }
   }
 
   //Draws the grid
-  Future drawGrid(PdfPage page, PdfGrid grid,
-      List<dynamic>? data, Size pageSize) async {
+  Future drawGrid(
+      PdfPage page, PdfGrid grid, List<dynamic>? data, Size pageSize) async {
     // Rect? totalPriceCellBounds;
     // Rect? quantityCellBounds;
     // //Invoke the beginCellLayout event.
@@ -863,9 +865,9 @@ class _StockCardScreenState extends State<StockCardScreen> {
     //   }
     // };
     grid.draw(
-    page: page,
-    bounds: Rect.fromLTWH(
-        0, 0, page.getClientSize().width, page.getClientSize().height));
+        page: page,
+        bounds: Rect.fromLTWH(
+            0, 0, page.getClientSize().width, page.getClientSize().height));
   }
 
   //Create PDF grid and return
@@ -893,7 +895,7 @@ class _StockCardScreenState extends State<StockCardScreen> {
     headerRow.cells[9].value = 'Date';
     headerRow.cells[9].stringFormat.alignment = PdfTextAlignment.center;
     for (int i = 0; i < data!.length; i++) {
-      addProducts('${i + 1}',data[i], grid,currency);
+      addProducts('${i + 1}', data[i], grid, currency);
     }
     //Apply the table built-in style
     grid.applyBuiltInStyle(PdfGridBuiltInStyle.listTable4Accent5);
@@ -920,20 +922,20 @@ class _StockCardScreenState extends State<StockCardScreen> {
   }
 
   //Create and row for the grid.
-  void addProducts(String productId,dynamic data, PdfGrid grid, String? currency) {
+  void addProducts(
+      String productId, dynamic data, PdfGrid grid, String? currency) {
     final PdfGridRow row = grid.rows.add();
     row.style =
         PdfGridRowStyle(font: PdfStandardFont(PdfFontFamily.helvetica, 7.5));
     row.cells[0].value = productId;
-    row.cells[1].value = data["datas"][0]["category"]??"";
-    row.cells[2].value = data["datas"][0]["item"]??"";
-    row.cells[3].value = "${data["datas"][0]["stockCount"]??"0"} Kg";
-    row.cells[4].value = "${data["datas"][0]["planToBuy"]??"0"} kg";
-    row.cells[5].value = "${data["datas"][0]["bought"]??"0"} kg";
-    row.cells[6].value = "$currency ${data["datas"][0]["pricePerUnit"]??"0"}";
-    row.cells[7].value = "${data["datas"][0]["consumption"]??"0"} kg";
-    row.cells[8].value = "${data["datas"][0]["closingStock"]??"0"} kg";
-    row.cells[9].value = data["datas"][0]["datecreated"]??"";
+    row.cells[1].value = data["datas"][0]["category"] ?? "";
+    row.cells[2].value = data["datas"][0]["item"] ?? "";
+    row.cells[3].value = "${data["datas"][0]["stockCount"] ?? "0"} Kg";
+    row.cells[4].value = "${data["datas"][0]["planToBuy"] ?? "0"} kg";
+    row.cells[5].value = "${data["datas"][0]["bought"] ?? "0"} kg";
+    row.cells[6].value = "$currency ${data["datas"][0]["pricePerUnit"] ?? "0"}";
+    row.cells[7].value = "${data["datas"][0]["consumption"] ?? "0"} kg";
+    row.cells[8].value = "${data["datas"][0]["closingStock"] ?? "0"} kg";
+    row.cells[9].value = data["datas"][0]["datecreated"] ?? "";
   }
-
 }

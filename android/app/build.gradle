@@ -1,3 +1,5 @@
+// android/app/build.gradle
+
 plugins {
     id "com.android.application"
     id "kotlin-android"
@@ -25,13 +27,13 @@ if (flutterVersionName == null) {
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
 if (keystorePropertiesFile.exists()) {
-       keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
 android {
     namespace "com.example.marie_erp"
-    compileSdkVersion 34
-    ndkVersion flutter.ndkVersion
+    compileSdkVersion 33 // Updated to a stable version
+    ndkVersion "25.1.8937393" // Specified NDK version
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -47,30 +49,24 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.marieerp.marie_erp"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
-        minSdkVersion flutter.minSdkVersion
-        targetSdkVersion flutter.targetSdkVersion
+        minSdkVersion 21 // Set minimum SDK version
+        targetSdkVersion 33 // Updated to match compileSdkVersion
         versionCode 2
         versionName '1.0.1'
     }
 
-    
     signingConfigs {
-       release {
-           keyAlias keystoreProperties['keyAlias']
-           keyPassword keystoreProperties['keyPassword']
-           storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-           storePassword keystoreProperties['storePassword']
-       }
-   }
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
+    }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.release
             shrinkResources false
             minifyEnabled false
@@ -83,5 +79,18 @@ flutter {
 }
 
 dependencies {
-     implementation "androidx.activity:activity:1.6.0-alpha05"
+    implementation "androidx.activity:activity:1.7.2" // Updated to stable version
+
+    // Include the Kotlin standard library
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+}
+
+// Force all dependencies to use Kotlin 1.8.0
+configurations.all {
+    resolutionStrategy {
+        force "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+        force "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
+        force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+        force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    }
 }

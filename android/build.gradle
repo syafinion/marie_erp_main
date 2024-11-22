@@ -1,11 +1,14 @@
+// android/build.gradle
+
 buildscript {
-    ext.kotlin_version = '1.7.10'
+    ext.kotlin_version = '1.8.0' // Updated to 1.8.0
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
+        classpath 'com.android.tools.build:gradle:7.4.2' // Added Gradle plugin
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -20,9 +23,16 @@ allprojects {
 rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
-    project.evaluationDependsOn(':app')
+
+    // Force all dependencies to use Kotlin 1.8.0
+    project.configurations.all {
+        resolutionStrategy {
+            force "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+        }
+    }
 }
 
 tasks.register("clean", Delete) {

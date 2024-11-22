@@ -36,6 +36,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: 
   animated_snack_bar: 
+  barcode_scan2: ^4.3.3
   get: 
   http: 
   flutter_spinkit:
