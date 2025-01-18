@@ -31,8 +31,9 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace "com.example.marie_erp"
-    compileSdkVersion 33 // Updated to a stable version
+    namespace "io.flutter.plugins"
+    // namespace "com.example.marie_erp"
+    compileSdkVersion 34 // Updated to a stable version
     ndkVersion "25.1.8937393" // Specified NDK version
 
     compileOptions {
@@ -51,7 +52,7 @@ android {
     defaultConfig {
         applicationId "com.marieerp.marie_erp"
         minSdkVersion 21 // Set minimum SDK version
-        targetSdkVersion 33 // Updated to match compileSdkVersion
+        targetSdkVersion 34 // Updated to match compileSdkVersion
         versionCode 2
         versionName '1.0.1'
     }
@@ -83,6 +84,8 @@ dependencies {
 
     // Include the Kotlin standard library
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
+    implementation files('libs/ctaiotCtpl1.0.0.jar')
 }
 
 // Force all dependencies to use Kotlin 1.8.0

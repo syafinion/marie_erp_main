@@ -28,6 +28,7 @@ class StoreRoomController extends GetxController {
   RxList<IngredientModels> ingredientList = <IngredientModels>[].obs;
 
   //Stock List
+
   RxList<Stocks> stockList = <Stocks>[].obs;
 
   final storage = const FlutterSecureStorage();
@@ -265,8 +266,10 @@ class StoreRoomController extends GetxController {
     required bool isCarton,
     required bool isBag,
     required String packageWeight,
-    required String unitPrice,
+    // Change this to optional:
+    String? unitPrice,
     required String storageLocation,
+    required String barcode, // Add the barcode parameter
   }) async {
     try {
       var userId = await storage.read(key: "userId");
@@ -284,8 +287,8 @@ class StoreRoomController extends GetxController {
             "isCarton": isCarton,
             "isBag": isBag,
             "packageWeight": packageWeight,
-            "unitPrice": unitPrice,
             "storageLocation": storageLocation,
+            "barcode": barcode, // Include barcode in the payload
           }
         ]
       };
@@ -317,6 +320,7 @@ class StoreRoomController extends GetxController {
   Future<dynamic> updateIngredientBarcode({
     required String ingredientId,
     required String barcode,
+    required String quantity,
   }) async {
     try {
       var userId = await storage.read(key: "userId");
@@ -325,6 +329,7 @@ class StoreRoomController extends GetxController {
       final body = {
         "userId": userId,
         "ingredientId": ingredientId,
+        "quantity": quantity,
         "barcode": barcode,
       };
 
