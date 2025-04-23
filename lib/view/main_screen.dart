@@ -168,7 +168,8 @@ class SlideInOptionsScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(Icons.add_box, color: primaryColor),
+                leading: Icon(Icons.add_box,
+                    color: Colors.green), // Changed color to green
                 title: Text("Stock In", style: TextStyle(fontFamily: "Lexand")),
                 onTap: () {
                   Navigator.of(context).pop(); // Close the panel
@@ -184,7 +185,8 @@ class SlideInOptionsScreen extends StatelessWidget {
               ),
               Divider(),
               ListTile(
-                leading: Icon(Icons.remove_circle, color: primaryColor),
+                leading: Icon(Icons.remove_circle,
+                    color: Colors.red), // Changed color to red
                 title:
                     Text("Stock Out", style: TextStyle(fontFamily: "Lexand")),
                 onTap: () {

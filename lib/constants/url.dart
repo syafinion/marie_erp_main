@@ -3,11 +3,11 @@
 // var baseUrl = "http://10.163.5.3:8000/api/";
 // var baseUrl = "https://www.karbudz.online/api/";
 // var baseUrl = "http://172.18.144.151:8000/api/";
-// var baseUrl = "http://192.168.85.117:8000/api/"; // qi shean
+// var baseUrl = "http://192.168.79.117:8000/api/"; // qi shean
 // var baseUrl = "http://10.163.10.141:8000/api/";
-// var baseUrl = "http://172.18.150.162:8000/api/";
+var baseUrl = "http://172.18.145.13:8000/api/"; // univ
 // var baseUrl = "http://192.168.0.7:8000/api/"; // code black cafe
-var baseUrl = "http://192.168.0.197:8000/api/";
+// var baseUrl = "http://192.168.0.197:8000/api/"; // home
 
 Map endPoint = {
   "login": "${baseUrl}login",

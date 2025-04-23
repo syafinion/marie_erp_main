@@ -211,7 +211,7 @@ public class MainActivity extends FlutterActivity {
         int textY = 100; // start printing text below the barcode
 
         // 1) "Barcode: 123456..."
-        String line1 = "Barcode: " + barcodeData;
+        String line1 = "" + barcodeData;
         int xLine1 = getCenteredX(line1, paperWidthPx, scale);
         CTPL.getInstance().drawText(
                 new Point(xLine1, textY),
@@ -221,7 +221,7 @@ public class MainActivity extends FlutterActivity {
 
         // 2) "Item Code: VEG001"
         textY += 40; // move down for next line
-        String line2 = "Item Code: " + itemCode;
+        String line2 = "" + itemCode;
         int xLine2 = getCenteredX(line2, paperWidthPx, scale);
         CTPL.getInstance().drawText(
                 new Point(xLine2, textY),
@@ -231,7 +231,7 @@ public class MainActivity extends FlutterActivity {
 
         // 3) "Item Name: Tomato"
         textY += 40;
-        String line3 = "Item Name: " + itemName;
+        String line3 = "" + itemName;
         int xLine3 = getCenteredX(line3, paperWidthPx, scale);
         CTPL.getInstance().drawText(
                 new Point(xLine3, textY),
@@ -241,7 +241,7 @@ public class MainActivity extends FlutterActivity {
 
         // 4) "Location: Chiller"
         textY += 40;
-        String line4 = "Location: " + storageLocation;
+        String line4 = "" + storageLocation;
         int xLine4 = getCenteredX(line4, paperWidthPx, scale);
         CTPL.getInstance().drawText(
                 new Point(xLine4, textY),

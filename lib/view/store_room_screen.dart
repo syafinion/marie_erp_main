@@ -415,11 +415,28 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
                                               SizedBox(
                                                 height: height * 0.05,
                                                 child: TextFormField(
+                                                  style: TextStyle(
+                                                    fontFamily: "Lexand",
+                                                    fontSize: height * 0.018,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                                   controller:
                                                       packageWeightController,
                                                   decoration: InputDecoration(
                                                     hintText:
                                                         "Enter package weight",
+                                                    hintStyle: TextStyle(
+                                                      fontFamily: "Lexand",
+                                                      fontSize: height * 0.014,
+                                                      fontWeight:
+                                                          FontWeight.w300,
+                                                    ),
+                                                    floatingLabelStyle:
+                                                        TextStyle(
+                                                      fontFamily: "Lexand",
+                                                      fontWeight:
+                                                          FontWeight.w300,
+                                                    ),
                                                     contentPadding:
                                                         const EdgeInsets.only(
                                                             left: 16.0),
@@ -427,6 +444,35 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                               15.0),
+                                                      borderSide:
+                                                          const BorderSide(
+                                                              width: 1.5),
+                                                    ),
+                                                    disabledBorder:
+                                                        OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              30.0),
+                                                      borderSide:
+                                                          const BorderSide(
+                                                              width: 1.5),
+                                                    ),
+                                                    enabledBorder:
+                                                        OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              30.0),
+                                                      borderSide: BorderSide(
+                                                        color: borderColor
+                                                            .withOpacity(1.0),
+                                                        width: 1.5,
+                                                      ),
+                                                    ),
+                                                    focusedBorder:
+                                                        OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              30.0),
                                                       borderSide:
                                                           const BorderSide(
                                                               width: 1.5),
@@ -711,7 +757,9 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
                                                           storageLocation:
                                                               tempStorageLocation,
                                                           barcode:
-                                                              generatedBarcode, // Replace with dynamically generated barcode
+                                                              generatedBarcode,
+                                                          itemCode:
+                                                              customID, // Replace with dynamically generated barcode
                                                         );
 
                                                         if (result != null) {

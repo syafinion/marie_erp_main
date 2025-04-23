@@ -68,6 +68,7 @@ dependencies:
   open_file_plus: 
   external_path: 
   fluttertoast: 
+  pie_chart: ^5.4.0
   # share_plus: ^7.2.2
 
 

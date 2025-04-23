@@ -682,497 +682,473 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
                             Stocks data = storeRoomController.stockList[i];
                             DateTime tempDate = new DateFormat("yyyy-MM-dd")
                                 .parse(data.datecreated!);
-                            if (tempDate.month == (currentMonth > 10 ? int.parse("0$currentMonth") :currentMonth) &&
+                            if (tempDate.month ==
+                                    (currentMonth > 10
+                                        ? int.parse("0$currentMonth")
+                                        : currentMonth) &&
                                 tempDate.year == currentYear) {
-                                  print(tempDate.month);
-                                  print((currentMonth > 10 ? int.parse("0$currentMonth") :currentMonth));
-                                  print(currentYear);
-                                  print(tempDate.year);
-                                  print(selectedStockId);
-                                  print(stockId);
-                              return 
-                              // (selectedStockId != stockId || data == '')
-                              //     ? Container(
-                              //         width: width,
-                              //         // color: primaryColor,
-                              //         child: Column(
-                              //           mainAxisAlignment:
-                              //               MainAxisAlignment.center,
-                              //           children: [
-                              //             Row(
-                              //               mainAxisAlignment:
-                              //                   MainAxisAlignment.center,
-                              //               children: [
-                              //                 Center(
-                              //                   child: Text(
-                              //                     "Add Stock",
-                              //                     style: TextStyle(
-                              //                         fontSize: 18,
-                              //                         fontWeight:
-                              //                             FontWeight.bold,
-                              //                         color: borderColor),
-                              //                   ),
-                              //                 )
-                              //               ],
-                              //             )
-                              //           ],
-                              //         ),
-                              //       )
-                              //     : 
+                              print(tempDate.month);
+                              print((currentMonth > 10
+                                  ? int.parse("0$currentMonth")
+                                  : currentMonth));
+                              print(currentYear);
+                              print(tempDate.year);
+                              print(selectedStockId);
+                              print(stockId);
+                              return
+                                  // (selectedStockId != stockId || data == '')
+                                  //     ? Container(
+                                  //         width: width,
+                                  //         // color: primaryColor,
+                                  //         child: Column(
+                                  //           mainAxisAlignment:
+                                  //               MainAxisAlignment.center,
+                                  //           children: [
+                                  //             Row(
+                                  //               mainAxisAlignment:
+                                  //                   MainAxisAlignment.center,
+                                  //               children: [
+                                  //                 Center(
+                                  //                   child: Text(
+                                  //                     "Add Stock",
+                                  //                     style: TextStyle(
+                                  //                         fontSize: 18,
+                                  //                         fontWeight:
+                                  //                             FontWeight.bold,
+                                  //                         color: borderColor),
+                                  //                   ),
+                                  //                 )
+                                  //               ],
+                                  //             )
+                                  //           ],
+                                  //         ),
+                                  //       )
+                                  //     :
                                   Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Container(
-                                        // height: height * 0.1,
-                                        width: width / 1.3,
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                              width: width * 0.001,
-                                              color: primaryColor),
-                                          borderRadius:
-                                              BorderRadius.circular(30.0),
-                                        ),
-                                        child: Column(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Container(
+                                  // height: height * 0.1,
+                                  width: width / 1.3,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                        width: width * 0.001,
+                                        color: primaryColor),
+                                    borderRadius: BorderRadius.circular(30.0),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: width * 0.04,
+                                            vertical: height * 0.02),
+                                        child: Row(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           mainAxisAlignment:
-                                              MainAxisAlignment.start,
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                  horizontal: width * 0.04,
-                                                  vertical: height * 0.02),
-                                              child: Row(
+                                            Expanded(
+                                              child: Column(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
                                                 children: [
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          formatDate(
-                                                              data.datecreated),
-                                                          style: TextStyle(
-                                                            fontFamily:
-                                                                "Lexand",
-                                                            fontSize:
-                                                                height * 0.022,
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                          ),
-                                                        ),
-                                                        SizedBox(
-                                                            height:
-                                                                height * 0.04),
-                                                        Text(
-                                                          "Opening Stock",
-                                                          style: TextStyle(
-                                                              fontFamily:
-                                                                  "Lexand",
-                                                              fontSize: height *
-                                                                  0.017,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w300,
-                                                              color: Colors
-                                                                  .grey[600]),
-                                                        ),
-                                                        Text(
-                                                          "${data.stockCount} ${data.unit}",
-                                                          style: TextStyle(
-                                                            fontFamily:
-                                                                "Lexand",
-                                                            fontSize:
-                                                                height * 0.022,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                        ),
-                                                        SizedBox(
-                                                            height:
-                                                                height * 0.02),
-                                                        Text(
-                                                          "Plan to buy",
-                                                          style: TextStyle(
-                                                              fontFamily:
-                                                                  "Lexand",
-                                                              fontSize: height *
-                                                                  0.017,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w300,
-                                                              color: Colors
-                                                                  .grey[600]),
-                                                        ),
-                                                        Text(
-                                                          "${data.planToBuy} ${data.unit}",
-                                                          style: TextStyle(
-                                                            fontFamily:
-                                                                "Lexand",
-                                                            fontSize:
-                                                                height * 0.022,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                        ),
-                                                        SizedBox(
-                                                            height:
-                                                                height * 0.02),
-                                                        Row(
-                                                          children: [
-                                                            Text(
-                                                              "Bought",
-                                                              style: TextStyle(
-                                                                  fontFamily:
-                                                                      "Lexand",
-                                                                  fontSize:
-                                                                      height *
-                                                                          0.017,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w300,
-                                                                  color: Colors
-                                                                          .grey[
-                                                                      600]),
-                                                            ),
-                                                            // Icon(
-                                                            //   Icons.arrow_drop_up,
-                                                            //   size: height * 0.03,
-                                                            //   color: Colors.green,
-                                                            // ),
-                                                            // Text(
-                                                            //   "20 %",
-                                                            //   style: TextStyle(
-                                                            //       fontFamily: "Lexand",
-                                                            //       fontSize: height * 0.011,
-                                                            //       fontWeight: FontWeight.w300,
-                                                            //       color: Colors.green),
-                                                            // ),
-                                                          ],
-                                                        ),
-                                                        // SizedBox(height: height * 0.02),
-                                                        Row(
-                                                          children: [
-                                                            Text(
-                                                              (data.bought !=
-                                                                      null)
-                                                                  ? "${data.bought} ${data.unit}"
-                                                                  : "Not yet entered",
-                                                              style: TextStyle(
-                                                                fontFamily:
-                                                                    "Lexand",
-                                                                fontSize:
-                                                                    height *
-                                                                        0.022,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w500,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        SizedBox(
-                                                            height:
-                                                                height * 0.02),
-                                                        Row(
-                                                          children: [
-                                                            Text(
-                                                              "Paid per unit",
-                                                              style: TextStyle(
-                                                                  fontFamily:
-                                                                      "Lexand",
-                                                                  fontSize:
-                                                                      height *
-                                                                          0.017,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w300,
-                                                                  color: Colors
-                                                                          .grey[
-                                                                      600]),
-                                                            ),
-                                                            // Icon(
-                                                            //   Icons.arrow_drop_down,
-                                                            //   size: height * 0.03,
-                                                            //   color: Colors.red,
-                                                            // ),
-                                                            // Text(
-                                                            //   "20 %",
-                                                            //   style: TextStyle(
-                                                            //       fontFamily: "Lexand",
-                                                            //       fontSize: height * 0.011,
-                                                            //       fontWeight: FontWeight.w300,
-                                                            //       color: Colors.red),
-                                                            // ),
-                                                          ],
-                                                        ),
-                                                        // SizedBox(height: height * 0.02),
-                                                        Text(
-                                                          (data.bought != null)
-                                                              ? "${data.pricePerUnit} ${data.unit}"
-                                                              : "Not yet entered",
-                                                          style: TextStyle(
-                                                            fontFamily:
-                                                                "Lexand",
-                                                            fontSize:
-                                                                height * 0.022,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                        ),
-                                                        SizedBox(
-                                                            height:
-                                                                height * 0.02),
-                                                        Text(
-                                                          "Consumption",
-                                                          style: TextStyle(
-                                                              fontFamily:
-                                                                  "Lexand",
-                                                              fontSize: height *
-                                                                  0.017,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w300,
-                                                              color: Colors
-                                                                  .grey[600]),
-                                                        ),
-                                                        SizedBox(
-                                                          width: width * 0.6,
-                                                          child: Text(
-                                                            (data.consumption !=
-                                                                    null)
-                                                                ? "${data.consumption} ${data.unit}"
-                                                                : "Calculated upon addition of the next stock card.",
-                                                            // overflow: TextOverflow.ellipsis,
-                                                            // maxLines: 1,
-                                                            style: TextStyle(
-                                                              fontFamily:
-                                                                  "Lexand",
-                                                              fontSize: height *
-                                                                  0.022,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        SizedBox(
-                                                            height:
-                                                                height * 0.02),
-                                                        Text(
-                                                          "Closing stock",
-                                                          style: TextStyle(
-                                                              fontFamily:
-                                                                  "Lexand",
-                                                              fontSize: height *
-                                                                  0.017,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w300,
-                                                              color: Colors
-                                                                  .grey[600]),
-                                                        ),
-                                                        SizedBox(
-                                                          width: width * 0.6,
-                                                          child: Text(
-                                                            (data.closingStock !=
-                                                                    null)
-                                                                ? "${data.closingStock} ${data.unit}"
-                                                                : "Calculated upon addition of the next stock card.",
-                                                            // overflow: TextOverflow.ellipsis,
-                                                            // maxLines: 1,
-                                                            style: TextStyle(
-                                                              fontFamily:
-                                                                  "Lexand",
-                                                              fontSize: height *
-                                                                  0.022,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w500,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
+                                                  Text(
+                                                    formatDate(
+                                                        data.datecreated),
+                                                    style: TextStyle(
+                                                      fontFamily: "Lexand",
+                                                      fontSize: height * 0.022,
+                                                      fontWeight:
+                                                          FontWeight.w600,
                                                     ),
                                                   ),
-                                                  Column(
+                                                  SizedBox(
+                                                      height: height * 0.04),
+                                                  Text(
+                                                    "Opening Stock",
+                                                    style: TextStyle(
+                                                        fontFamily: "Lexand",
+                                                        fontSize:
+                                                            height * 0.017,
+                                                        fontWeight:
+                                                            FontWeight.w300,
+                                                        color:
+                                                            Colors.grey[600]),
+                                                  ),
+                                                  Text(
+                                                    "${data.stockCount} ${data.unit}",
+                                                    style: TextStyle(
+                                                      fontFamily: "Lexand",
+                                                      fontSize: height * 0.022,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                      height: height * 0.02),
+                                                  Text(
+                                                    "Plan to buy",
+                                                    style: TextStyle(
+                                                        fontFamily: "Lexand",
+                                                        fontSize:
+                                                            height * 0.017,
+                                                        fontWeight:
+                                                            FontWeight.w300,
+                                                        color:
+                                                            Colors.grey[600]),
+                                                  ),
+                                                  Text(
+                                                    "${data.planToBuy} ${data.unit}",
+                                                    style: TextStyle(
+                                                      fontFamily: "Lexand",
+                                                      fontSize: height * 0.022,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                      height: height * 0.02),
+                                                  Row(
                                                     children: [
-                                                      IconButton(
-                                                        onPressed: () async {
-                                                          // print(data.toJson());
-                                                          _showEditItemModal(
-                                                              context,
-                                                              data!.id
-                                                                  .toString(),
-                                                              data.stockCount ??
-                                                                  "",
-                                                              data.planToBuy ??
-                                                                  "",
-                                                              data.bought ?? "",
-                                                              data.pricePerUnit ??
-                                                                  "",stockId.toString());
-                                                        },
-                                                        icon: const Icon(Icons.edit),
+                                                      Text(
+                                                        "Bought",
+                                                        style: TextStyle(
+                                                            fontFamily:
+                                                                "Lexand",
+                                                            fontSize:
+                                                                height * 0.017,
+                                                            fontWeight:
+                                                                FontWeight.w300,
+                                                            color: Colors
+                                                                .grey[600]),
                                                       ),
-                                                      IconButton(
-                                                        onPressed: () {
-                                                          Get.dialog(
-                                                            Column(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              children: [
-                                                                Padding(
-                                                                  padding: const EdgeInsets
-                                                                      .symmetric(
-                                                                      horizontal:
-                                                                          40),
-                                                                  child:
-                                                                      Container(
-                                                                    decoration:
-                                                                        const BoxDecoration(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .all(
-                                                                        Radius.circular(
-                                                                            20),
-                                                                      ),
-                                                                    ),
-                                                                    child:
-                                                                        Padding(
-                                                                      padding: const EdgeInsets
-                                                                          .all(
-                                                                          20.0),
-                                                                      child:
-                                                                          Material(
-                                                                        child:
-                                                                            Column(
-                                                                          children: [
-                                                                            const Text(
-                                                                              "Delete Item",
-                                                                              textAlign: TextAlign.center,
-                                                                              style: TextStyle(
-                                                                                fontWeight: FontWeight.bold,
-                                                                                fontSize: 20,
-                                                                                color: Colors.black,
-                                                                              ),
-                                                                            ),
-                                                                            SizedBox(height: height * 0.02),
-                                                                            const Text(
-                                                                              "Are You Sure,Delete This Item?",
-                                                                              textAlign: TextAlign.center,
-                                                                              style: TextStyle(
-                                                                                fontWeight: FontWeight.bold,
-                                                                                fontSize: 16,
-                                                                              ),
-                                                                            ),
-                                                                            SizedBox(height: height * 0.04),
-                                                                            Row(
-                                                                              children: [
-                                                                                Expanded(
-                                                                                  child: InkWell(
-                                                                                    onTap: () {
-                                                                                      Get.back();
-                                                                                    },
-                                                                                    child: Padding(
-                                                                                      padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                                                                                      child: Container(
-                                                                                        height: height * 0.04,
-                                                                                        width: width,
-                                                                                        decoration: BoxDecoration(
-                                                                                          color: Colors.white.withOpacity(1.0),
-                                                                                          border: Border.all(width: width * 0.001, color: buttonColor),
-                                                                                          borderRadius: BorderRadius.circular(15.0),
-                                                                                        ),
-                                                                                        child: Padding(
-                                                                                          padding: const EdgeInsets.all(8.0),
-                                                                                          child: Center(
-                                                                                            child: Text(
-                                                                                              "No",
-                                                                                              style: TextStyle(color: buttonColor, fontFamily: "Lexand", fontSize: height * 0.015, fontWeight: FontWeight.w700),
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                                const SizedBox(width: 10),
-                                                                                Expanded(
-                                                                                  child: InkWell(
-                                                                                    onTap: () async {
-                                                                                      var result = await storeRoomController.deleteStock(stockId: data.id);
-                                                                                      if (result == true) {
-                                                                                        storeRoomController.stockListApi(category: widget.categoryName!, item: stockId);
-
-                                                                                        Get.back();
-                                                                                      }
-                                                                                      print("${result}--->>>");
-                                                                                    },
-                                                                                    child: Padding(
-                                                                                      padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                                                                                      child: Container(
-                                                                                        height: height * 0.04,
-                                                                                        width: width,
-                                                                                        decoration: BoxDecoration(
-                                                                                          color: Colors.black.withOpacity(1.0),
-                                                                                          border: Border.all(width: width * 0.001, color: buttonColor),
-                                                                                          borderRadius: BorderRadius.circular(15.0),
-                                                                                        ),
-                                                                                        child: Padding(
-                                                                                          padding: const EdgeInsets.all(8.0),
-                                                                                          child: Center(
-                                                                                            child: Text(
-                                                                                              "Yes",
-                                                                                              style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.015, fontWeight: FontWeight.w700),
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                              ],
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          );
-                                                        },
-                                                        icon:
-                                                            const Icon(Icons.delete),
-                                                      ),
-                                                      // InkWell(
-                                                      //   onTap: () {},
-                                                      //   child: Padding(
-                                                      //     padding: const EdgeInsets.all(8.0),
-                                                      //     child: Icon(
-                                                      //       Icons.edit,
-                                                      //       size: height * 0.02,
-                                                      //     ),
-                                                      //   ),
+                                                      // Icon(
+                                                      //   Icons.arrow_drop_up,
+                                                      //   size: height * 0.03,
+                                                      //   color: Colors.green,
+                                                      // ),
+                                                      // Text(
+                                                      //   "20 %",
+                                                      //   style: TextStyle(
+                                                      //       fontFamily: "Lexand",
+                                                      //       fontSize: height * 0.011,
+                                                      //       fontWeight: FontWeight.w300,
+                                                      //       color: Colors.green),
                                                       // ),
                                                     ],
+                                                  ),
+                                                  // SizedBox(height: height * 0.02),
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        (data.bought != null)
+                                                            ? "${data.bought} ${data.unit}"
+                                                            : "Not yet entered",
+                                                        style: TextStyle(
+                                                          fontFamily: "Lexand",
+                                                          fontSize:
+                                                              height * 0.022,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  SizedBox(
+                                                      height: height * 0.02),
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        "Paid per unit",
+                                                        style: TextStyle(
+                                                            fontFamily:
+                                                                "Lexand",
+                                                            fontSize:
+                                                                height * 0.017,
+                                                            fontWeight:
+                                                                FontWeight.w300,
+                                                            color: Colors
+                                                                .grey[600]),
+                                                      ),
+                                                      // Icon(
+                                                      //   Icons.arrow_drop_down,
+                                                      //   size: height * 0.03,
+                                                      //   color: Colors.red,
+                                                      // ),
+                                                      // Text(
+                                                      //   "20 %",
+                                                      //   style: TextStyle(
+                                                      //       fontFamily: "Lexand",
+                                                      //       fontSize: height * 0.011,
+                                                      //       fontWeight: FontWeight.w300,
+                                                      //       color: Colors.red),
+                                                      // ),
+                                                    ],
+                                                  ),
+                                                  // SizedBox(height: height * 0.02),
+                                                  Text(
+                                                    (data.bought != null)
+                                                        ? "${data.pricePerUnit} ${data.unit}"
+                                                        : "Not yet entered",
+                                                    style: TextStyle(
+                                                      fontFamily: "Lexand",
+                                                      fontSize: height * 0.022,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                      height: height * 0.02),
+                                                  Text(
+                                                    "Consumption",
+                                                    style: TextStyle(
+                                                        fontFamily: "Lexand",
+                                                        fontSize:
+                                                            height * 0.017,
+                                                        fontWeight:
+                                                            FontWeight.w300,
+                                                        color:
+                                                            Colors.grey[600]),
+                                                  ),
+                                                  SizedBox(
+                                                    width: width * 0.6,
+                                                    child: Text(
+                                                      (data.consumption != null)
+                                                          ? "${data.consumption} ${data.unit}"
+                                                          : "Calculated upon addition of the next stock card.",
+                                                      // overflow: TextOverflow.ellipsis,
+                                                      // maxLines: 1,
+                                                      style: TextStyle(
+                                                        fontFamily: "Lexand",
+                                                        fontSize:
+                                                            height * 0.022,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                      height: height * 0.02),
+                                                  Text(
+                                                    "Closing stock",
+                                                    style: TextStyle(
+                                                        fontFamily: "Lexand",
+                                                        fontSize:
+                                                            height * 0.017,
+                                                        fontWeight:
+                                                            FontWeight.w300,
+                                                        color:
+                                                            Colors.grey[600]),
+                                                  ),
+                                                  SizedBox(
+                                                    width: width * 0.6,
+                                                    child: Text(
+                                                      (data.closingStock !=
+                                                              null)
+                                                          ? "${data.closingStock} ${data.unit}"
+                                                          : "Calculated upon addition of the next stock card.",
+                                                      // overflow: TextOverflow.ellipsis,
+                                                      // maxLines: 1,
+                                                      style: TextStyle(
+                                                        fontFamily: "Lexand",
+                                                        fontSize:
+                                                            height * 0.022,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
                                                   ),
                                                 ],
                                               ),
                                             ),
+                                            Column(
+                                              children: [
+                                                IconButton(
+                                                  onPressed: () async {
+                                                    // print(data.toJson());
+                                                    _showEditItemModal(
+                                                        context,
+                                                        data!.id.toString(),
+                                                        data.stockCount ?? "",
+                                                        data.planToBuy ?? "",
+                                                        data.bought ?? "",
+                                                        data.pricePerUnit ?? "",
+                                                        stockId.toString());
+                                                  },
+                                                  icon: const Icon(Icons.edit),
+                                                ),
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Get.dialog(
+                                                      Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .symmetric(
+                                                                    horizontal:
+                                                                        40),
+                                                            child: Container(
+                                                              decoration:
+                                                                  const BoxDecoration(
+                                                                color: Colors
+                                                                    .white,
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .all(
+                                                                  Radius
+                                                                      .circular(
+                                                                          20),
+                                                                ),
+                                                              ),
+                                                              child: Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        20.0),
+                                                                child: Material(
+                                                                  child: Column(
+                                                                    children: [
+                                                                      const Text(
+                                                                        "Delete Item",
+                                                                        textAlign:
+                                                                            TextAlign.center,
+                                                                        style:
+                                                                            TextStyle(
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          fontSize:
+                                                                              20,
+                                                                          color:
+                                                                              Colors.black,
+                                                                        ),
+                                                                      ),
+                                                                      SizedBox(
+                                                                          height:
+                                                                              height * 0.02),
+                                                                      const Text(
+                                                                        "Are You Sure,Delete This Item?",
+                                                                        textAlign:
+                                                                            TextAlign.center,
+                                                                        style:
+                                                                            TextStyle(
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          fontSize:
+                                                                              16,
+                                                                        ),
+                                                                      ),
+                                                                      SizedBox(
+                                                                          height:
+                                                                              height * 0.04),
+                                                                      Row(
+                                                                        children: [
+                                                                          Expanded(
+                                                                            child:
+                                                                                InkWell(
+                                                                              onTap: () {
+                                                                                Get.back();
+                                                                              },
+                                                                              child: Padding(
+                                                                                padding: EdgeInsets.symmetric(horizontal: width * 0.02),
+                                                                                child: Container(
+                                                                                  height: height * 0.04,
+                                                                                  width: width,
+                                                                                  decoration: BoxDecoration(
+                                                                                    color: Colors.white.withOpacity(1.0),
+                                                                                    border: Border.all(width: width * 0.001, color: buttonColor),
+                                                                                    borderRadius: BorderRadius.circular(15.0),
+                                                                                  ),
+                                                                                  child: Padding(
+                                                                                    padding: const EdgeInsets.all(8.0),
+                                                                                    child: Center(
+                                                                                      child: Text(
+                                                                                        "No",
+                                                                                        style: TextStyle(color: buttonColor, fontFamily: "Lexand", fontSize: height * 0.015, fontWeight: FontWeight.w700),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                          const SizedBox(
+                                                                              width: 10),
+                                                                          Expanded(
+                                                                            child:
+                                                                                InkWell(
+                                                                              onTap: () async {
+                                                                                var result = await storeRoomController.deleteStock(stockId: data.id);
+                                                                                if (result == true) {
+                                                                                  storeRoomController.stockListApi(category: widget.categoryName!, item: stockId);
+
+                                                                                  Get.back();
+                                                                                }
+                                                                                print("${result}--->>>");
+                                                                              },
+                                                                              child: Padding(
+                                                                                padding: EdgeInsets.symmetric(horizontal: width * 0.02),
+                                                                                child: Container(
+                                                                                  height: height * 0.04,
+                                                                                  width: width,
+                                                                                  decoration: BoxDecoration(
+                                                                                    color: Colors.black.withOpacity(1.0),
+                                                                                    border: Border.all(width: width * 0.001, color: buttonColor),
+                                                                                    borderRadius: BorderRadius.circular(15.0),
+                                                                                  ),
+                                                                                  child: Padding(
+                                                                                    padding: const EdgeInsets.all(8.0),
+                                                                                    child: Center(
+                                                                                      child: Text(
+                                                                                        "Yes",
+                                                                                        style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.015, fontWeight: FontWeight.w700),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  },
+                                                  icon:
+                                                      const Icon(Icons.delete),
+                                                ),
+                                                // InkWell(
+                                                //   onTap: () {},
+                                                //   child: Padding(
+                                                //     padding: const EdgeInsets.all(8.0),
+                                                //     child: Icon(
+                                                //       Icons.edit,
+                                                //       size: height * 0.02,
+                                                //     ),
+                                                //   ),
+                                                // ),
+                                              ],
+                                            ),
                                           ],
                                         ),
                                       ),
-                                    );
+                                    ],
+                                  ),
+                                ),
+                              );
                             } else {
                               return Container();
                             }

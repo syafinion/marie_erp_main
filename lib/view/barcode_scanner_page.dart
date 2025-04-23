@@ -139,6 +139,9 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
         showDialog(
           context: context,
           builder: (context) {
+            // Determine form type (stock in or stock out)
+            final bool isStockIn = widget.ingredientId == 'stock_in';
+
             // Extract fields from your 'ingredientData'
             final name = ingredientData['data']['ingredient'] ?? 'Unknown';
             final storageLocation =
@@ -153,6 +156,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
             final isLoose = parseBool(ingredientData['data']['isLoose']);
             final isCarton = parseBool(ingredientData['data']['isCarton']);
             final isBag = parseBool(ingredientData['data']['isBag']);
+            final measurement = ingredientData['data']['measurement'] ?? '';
 
             final double dbUnitPrice = double.tryParse(
                   ingredientData['data']['unitPrice']?.toString() ?? '0.0',
@@ -168,227 +172,215 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
                 TextEditingController(text: dbUnitPrice.toStringAsFixed(2));
 
             double totalCost = 0.0;
-// Build a comma-separated list of the package type(s)
+            // Build a comma-separated list of the package type(s)
             List<String> packageTypes = [];
             if (isLoose) packageTypes.add('Loose');
             if (isCarton) packageTypes.add('Carton');
             if (isBag) packageTypes.add('Bag');
-
-// Join them with commas
             final packageTypeText =
                 packageTypes.isEmpty ? 'None' : packageTypes.join(', ');
 
             return AlertDialog(
-              content: StatefulBuilder(
-                builder: (context, setState) {
-                  void recalculateTotal() {
-                    final q =
-                        double.tryParse(quantityController.text.trim()) ?? 0.0;
-                    final p =
-                        double.tryParse(priceController.text.trim()) ?? 0.0;
-                    setState(() {
-                      totalCost = q * p;
-                    });
-                  }
+              content: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                  side: BorderSide(
+                    color: isStockIn ? Colors.green : Colors.red,
+                    width: 4.0,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: StatefulBuilder(
+                    builder: (context, setState) {
+                      void recalculateTotal() {
+                        final q =
+                            double.tryParse(quantityController.text.trim()) ??
+                                0.0;
+                        final p =
+                            double.tryParse(priceController.text.trim()) ?? 0.0;
+                        setState(() {
+                          totalCost = q * p;
+                        });
+                      }
 
-                  // 1) Trigger an immediate recalc when the dialog builds:
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    recalculateTotal();
-                  });
+                      // Trigger immediate recalc when the dialog builds:
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        recalculateTotal();
+                      });
 
-                  return SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Item: $name",
-                          style: const TextStyle(
-                            fontFamily: "Lexand",
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text("Current Stock In Date: $currentDate",
-                            style: const TextStyle(
-                                fontFamily: "Lexand", fontSize: 14)),
-                        const SizedBox(height: 10),
-                        Text("Storage: $storageLocation",
-                            style: const TextStyle(
-                                fontFamily: "Lexand", fontSize: 14)),
-                        const SizedBox(height: 10),
-
-                        // Checkboxes using Expanded to prevent overflow
-                        // Wrap(
-                        //   spacing: 15.0, // Horizontal spacing between items
-                        //   runSpacing:
-                        //       10.0, // Vertical spacing if wrapped to next line
-                        //   children: [
-                        //     Row(
-                        //       mainAxisSize: MainAxisSize.min,
-                        //       children: [
-                        //         Checkbox(value: isLoose, onChanged: null),
-                        //         const Text("Loose"),
-                        //       ],
-                        //     ),
-                        //     Row(
-                        //       mainAxisSize: MainAxisSize.min,
-                        //       children: [
-                        //         Checkbox(value: isCarton, onChanged: null),
-                        //         const Text("Carton"),
-                        //       ],
-                        //     ),
-                        //     Row(
-                        //       mainAxisSize: MainAxisSize.min,
-                        //       children: [
-                        //         Checkbox(value: isBag, onChanged: null),
-                        //         const Text("Bag"),
-                        //       ],
-                        //     ),
-                        //   ],
-                        // ),
-
-                        // Replace the Wrap(...) with something like:
-                        Text(
-                          "Package Type: $packageTypeText",
-                          style: const TextStyle(
-                            fontFamily: "Lexand",
-                            fontSize: 14,
-                          ),
-                        ),
-                        SizedBox(height: 10),
-
-                        const SizedBox(height: 10),
-
-                        // Quantity
-                        const Text(
-                          "Enter Quantity",
-                          style: TextStyle(
-                            fontFamily: "Lexand",
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        TextFormField(
-                          controller: quantityController,
-                          keyboardType: TextInputType.number,
-                          onChanged: (_) => recalculateTotal(),
-                          decoration: InputDecoration(
-                            labelText: "Quantity",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15.0),
-                              borderSide: BorderSide(
-                                width: 1.5,
-                                color: Colors.black.withOpacity(0.5),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-
-                        // Price
-                        const Text(
-                          "Enter Price per Bag/Carton/Loose",
-                          style: TextStyle(
-                            fontFamily: "Lexand",
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        TextFormField(
-                          controller: priceController,
-                          keyboardType: TextInputType.number,
-                          onChanged: (_) => recalculateTotal(),
-                          decoration: InputDecoration(
-                            labelText: "Price",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15.0),
-                              borderSide: BorderSide(
-                                width: 1.5,
-                                color: Colors.black.withOpacity(0.5),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-
-                        // Total
-                        Text(
-                          "Total: \RM${totalCost.toStringAsFixed(2)}",
-                          style: const TextStyle(
-                            fontFamily: "Lexand",
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Action buttons
-                        Row(
+                      return SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () => Navigator.pop(context),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                ),
-                                child: const Text(
-                                  "Cancel",
-                                  style: TextStyle(
-                                    fontFamily: "Lexand",
-                                    fontWeight: FontWeight.bold,
+                            Text(
+                              "Item: $name",
+                              style: const TextStyle(
+                                fontFamily: "Lexand",
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              isStockIn
+                                  ? "Current Stock In Date: $currentDate"
+                                  : "Current Stock Out Date: $currentDate",
+                              style: TextStyle(
+                                fontFamily: "Lexand",
+                                fontSize: 14,
+                                color: isStockIn ? Colors.green : Colors.red,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              "Storage: $storageLocation",
+                              style: const TextStyle(
+                                fontFamily: "Lexand",
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              "Package Type: $packageTypeText",
+                              style: const TextStyle(
+                                fontFamily: "Lexand",
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            // Quantity field
+                            const Text(
+                              "Enter Quantity",
+                              style: TextStyle(
+                                fontFamily: "Lexand",
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            TextFormField(
+                              controller: quantityController,
+                              keyboardType: TextInputType.number,
+                              onChanged: (_) => recalculateTotal(),
+                              decoration: InputDecoration(
+                                labelText: "Quantity",
+                                suffixText: measurement,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(15.0),
+                                  borderSide: BorderSide(
+                                    width: 1.5,
+                                    color: Colors.black.withOpacity(0.5),
                                   ),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () async {
-                                  if (quantityController.text.isNotEmpty) {
-                                    await updateStock(
-                                      ingredientId: ingredientId.toString(),
-                                      type: widget.ingredientId == 'stock_in'
-                                          ? 'in'
-                                          : 'out',
-                                      quantity: quantityController.text.trim(),
-                                    );
-                                    Navigator.pop(context);
-                                  } else {
-                                    Get.snackbar(
-                                      'Error',
-                                      'Please enter a quantity',
-                                    );
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                ),
-                                child: const Text(
-                                  "Save",
-                                  style: TextStyle(
-                                    fontFamily: "Lexand",
-                                    fontWeight: FontWeight.bold,
+                            const SizedBox(height: 10),
+                            // Price field
+                            const Text(
+                              "Enter Price",
+                              style: TextStyle(
+                                fontFamily: "Lexand",
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            TextFormField(
+                              controller: priceController,
+                              keyboardType: TextInputType.number,
+                              onChanged: (_) => recalculateTotal(),
+                              decoration: InputDecoration(
+                                labelText: "Price",
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(15.0),
+                                  borderSide: BorderSide(
+                                    width: 1.5,
+                                    color: Colors.black.withOpacity(0.5),
                                   ),
                                 ),
                               ),
+                            ),
+                            const SizedBox(height: 10),
+                            // Total
+                            Text(
+                              "Total: \RM${totalCost.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                fontFamily: "Lexand",
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            // Action buttons
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      "Cancel",
+                                      style: TextStyle(
+                                        fontFamily: "Lexand",
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      if (quantityController.text.isNotEmpty) {
+                                        await updateStock(
+                                          ingredientId: ingredientId.toString(),
+                                          type:
+                                              widget.ingredientId == 'stock_in'
+                                                  ? 'in'
+                                                  : 'out',
+                                          quantity:
+                                              quantityController.text.trim(),
+                                        );
+                                        Navigator.pop(context);
+                                      } else {
+                                        Get.snackbar(
+                                          'Error',
+                                          'Please enter a quantity',
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          isStockIn ? Colors.green : Colors.red,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      "Save",
+                                      style: TextStyle(
+                                        fontFamily: "Lexand",
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  );
-                },
+                      );
+                    },
+                  ),
+                ),
               ),
             );
           },
@@ -407,15 +399,14 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isStockIn = widget.ingredientId == 'stock_in';
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.ingredientId == 'stock_in'
-              ? 'Stock In Barcode'
-              : 'Stock Out Barcode',
+          isStockIn ? 'Stock In Barcode' : 'Stock Out Barcode',
           style: const TextStyle(fontFamily: "Lexand"),
         ),
-        backgroundColor: primaryColor,
+        backgroundColor: isStockIn ? Colors.green : Colors.red,
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,

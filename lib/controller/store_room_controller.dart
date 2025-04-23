@@ -269,7 +269,8 @@ class StoreRoomController extends GetxController {
     // Change this to optional:
     String? unitPrice,
     required String storageLocation,
-    required String barcode, // Add the barcode parameter
+    required String barcode,
+    required String itemCode, // Add the barcode parameter
   }) async {
     try {
       var userId = await storage.read(key: "userId");
@@ -288,7 +289,8 @@ class StoreRoomController extends GetxController {
             "isBag": isBag,
             "packageWeight": packageWeight,
             "storageLocation": storageLocation,
-            "barcode": barcode, // Include barcode in the payload
+            "barcode": barcode,
+            "itemCode": itemCode, // Include barcode in the payload
           }
         ]
       };

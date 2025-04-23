@@ -14,6 +14,7 @@ class IngredientModels {
   String? packageWeight;
   String? unitPrice;
   String? storageLocation;
+  String? itemCode;
 
   // Add the barcode field
   String? barcode;
@@ -30,6 +31,7 @@ class IngredientModels {
     this.packageWeight,
     this.unitPrice,
     this.storageLocation,
+    this.itemCode,
     this.barcode, // Include in constructor
   });
 
@@ -49,6 +51,7 @@ class IngredientModels {
     packageWeight = json['packageWeight']?.toString() ?? '';
     unitPrice = json['unitPrice']?.toString() ?? '';
     storageLocation = json['storageLocation']?.toString() ?? '';
+    itemCode = json['itemCode']?.toString();
     barcode = json['barcode']?.toString(); // Parse barcode
   }
 
@@ -67,6 +70,7 @@ class IngredientModels {
     data['packageWeight'] = packageWeight;
     data['unitPrice'] = unitPrice;
     data['storageLocation'] = storageLocation;
+    data['itemCode'] = itemCode;
     data['barcode'] = barcode; // Include barcode in JSON
     return data;
   }
