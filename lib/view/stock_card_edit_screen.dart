@@ -200,6 +200,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
       );
     }
 
+    final unit = list.first.unit;
     // 2. compute opening, totalIn, totalOut, closing
     final opening = int.tryParse(list.first.stockCount ?? '0') ?? 0;
     final totalIn = list.fold<int>(
@@ -235,10 +236,10 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildStat("Opening", "$opening kg"),
-                  _buildStat("In", "$totalIn kg"),
-                  _buildStat("Out", "$totalOut kg"),
-                  _buildStat("Closing", "$closing kg"),
+                  _buildStat("Opening", "$opening $unit"),
+                  _buildStat("In", "$totalIn $unit"),
+                  _buildStat("Out", "$totalOut $unit"),
+                  _buildStat("Closing", "$closing $unit"),
                 ],
               ),
 
@@ -292,7 +293,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
                       ),
                       Padding(
                         padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Text("Price/kg",
+                        child: Text("Price",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontFamily: "Lexand",
@@ -347,7 +348,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
 
               // ─── footer with actual numbers ────────────────────────
               Text(
-                "Opening + In − Out = Closing ⇒ "
+                "Closing Balance: "
                 "$opening + $totalIn − $totalOut = $closing",
                 style: const TextStyle(
                   fontFamily: "Lexand",
@@ -356,7 +357,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                "Total Stock In : $totalIn kg",
+                "Total Stock In : $totalIn $unit",
                 style: const TextStyle(
                   fontFamily: "Lexand",
                   fontWeight: FontWeight.w600,
@@ -364,7 +365,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                "Total Stock Out : $totalOut kg",
+                "Total Stock Out : $totalOut $unit",
                 style: const TextStyle(
                   fontFamily: "Lexand",
                   fontWeight: FontWeight.w600,
@@ -372,7 +373,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                "Average Price /RM per kg: ${avgPrice.toStringAsFixed(2)}",
+                "Average Price /RM per $unit: ${avgPrice.toStringAsFixed(2)}",
                 style: const TextStyle(
                   fontFamily: "Lexand",
                   fontWeight: FontWeight.w600,
@@ -417,6 +418,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
     double avgPrice,
     double width,
   ) {
+    final unit = list.isNotEmpty ? list.first.unit : '';
     // 1. compute actual usage & wastage
     final actualUsage = list.fold<double>(
       0.0,
@@ -430,10 +432,12 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
 
     final wastage = (totalOut - actualUsage).clamp(0.0, totalOut.toDouble());
 
-    // 2. cost metrics
-    final totalCost = avgPrice * totalOut;
-    final actualUsagePrice = avgPrice * actualUsage;
-    final wastageCost = totalCost - actualUsagePrice;
+    final priceSum = list.fold<double>(
+      0.0,
+      (sum, s) => sum + (double.tryParse(s.pricePerUnit ?? '0') ?? 0.0),
+    );
+    final avgPrice = totalIn > 0 ? priceSum / totalIn : 0.0;
+
     final totalPrice = list.fold<double>(
       0.0,
       (sum, s) =>
@@ -455,6 +459,13 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
     // 4. compute “good” usage (what remains after wastage)
     final usageKg = actualUsage - wastageKg;
 
+    // 2. cost metrics
+    final totalCost = avgPrice * totalOut;
+    // final actualUsagePrice = avgPrice * actualUsage;
+    // final wastageCost = totalCost - actualUsagePrice;
+    final usageCost = avgPrice * usageKg;
+    final wastageCost = avgPrice * wastageKg;
+
     // 5. percentages for your metric cards
     final usagePct = totalOut > 0 ? (usageKg / totalOut) * 100.0 : 0.0;
     final wastePct = totalOut > 0 ? (wastageKg / totalOut) * 100.0 : 0.0;
@@ -467,7 +478,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
           children: [
             _MetricCard(
               title: "Usage",
-              value: "${usageKg.toStringAsFixed(1)} kg",
+              value: "${usageKg.toStringAsFixed(1)} $unit",
               percent: usagePct,
               color: Colors.teal,
               icon: Icons.trending_up,
@@ -475,7 +486,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
             const SizedBox(width: 12),
             _MetricCard(
               title: "Wastage",
-              value: "${wastageKg.toStringAsFixed(1)} kg",
+              value: "${wastageKg.toStringAsFixed(1)} $unit",
               percent: wastePct,
               color: Colors.deepOrange,
               icon: Icons.delete_outline,
@@ -518,7 +529,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "Wastage: ${wastageKg.toStringAsFixed(1)} kg",
+                "Wastage: ${wastageKg.toStringAsFixed(1)} $unit",
                 style: const TextStyle(
                   fontFamily: "Lexand",
                   fontSize: 16,
@@ -627,15 +638,15 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
             rows: [
               DataRow(cells: [
                 const DataCell(Text("Total Stock Out")),
-                DataCell(Text("${totalOut.toStringAsFixed(1)} kg")),
+                DataCell(Text("${totalOut.toStringAsFixed(1)} $unit")),
               ]),
               DataRow(cells: [
                 const DataCell(Text("Actual Usage")),
-                DataCell(Text("${usageKg.toStringAsFixed(1)} kg")),
+                DataCell(Text("${usageKg.toStringAsFixed(1)} $unit")),
               ]),
               DataRow(cells: [
                 const DataCell(Text("Wastage")),
-                DataCell(Text("${wastageKg.toStringAsFixed(1)} kg")),
+                DataCell(Text("${wastageKg.toStringAsFixed(1)} $unit")),
               ]),
               DataRow(cells: [
                 const DataCell(Text("Avg. Price")),
@@ -647,7 +658,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
               ]),
               DataRow(cells: [
                 const DataCell(Text("Usage Cost")),
-                DataCell(Text("RM ${actualUsagePrice.toStringAsFixed(2)}")),
+                DataCell(Text("RM ${usageCost.toStringAsFixed(2)}")),
               ]),
               DataRow(cells: [
                 const DataCell(Text("Wastage Cost")),
@@ -658,34 +669,6 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
         ),
 
         const SizedBox(height: 16),
-
-        // ─── Formulas ──────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("Formulas:",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(
-                "Actual Usage Price = Usage × Avg. Price = "
-                "${usageKg.toStringAsFixed(1)} kg × RM ${avgPrice.toStringAsFixed(2)} "
-                "= RM ${actualUsagePrice.toStringAsFixed(2)}",
-              ),
-              Text(
-                "Total Cost = Avg. Price × Stock Out = "
-                "RM ${avgPrice.toStringAsFixed(2)} × ${totalOut.toStringAsFixed(1)} kg "
-                "= RM ${totalCost.toStringAsFixed(2)}",
-              ),
-              Text(
-                "Wastage Cost = Total Cost − Usage Cost = "
-                "RM ${totalCost.toStringAsFixed(2)} − RM ${actualUsagePrice.toStringAsFixed(2)} "
-                "= RM ${wastageCost.toStringAsFixed(2)}",
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
@@ -1034,6 +1017,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
     int packagingPct,
     int environmentPct,
   ) {
+    final _formKey = GlobalKey<FormState>();
     final h = MediaQuery.of(context).size.height;
 
     // Prefill the controllers:
@@ -1045,104 +1029,157 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Edit Wastage Breakdown",
-              style: TextStyle(
-                fontFamily: "Lexand",
-                fontSize: h * 0.02,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Processing %
-            TextFormField(
-              controller: alertProcessingPct,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: "Processing %",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+        content: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Edit Wastage Breakdown",
+                style: TextStyle(
+                  fontFamily: "Lexand",
+                  fontSize: h * 0.02,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
-            // Packaging %
-            TextFormField(
-              controller: alertPackagingPct,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: "Packaging %",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Environment %
-            TextFormField(
-              controller: alertEnvironmentPct,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: "Environment %",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text("Cancel"),
+              // Processing %
+              TextFormField(
+                controller: alertProcessingPct,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: "Processing %",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      final res = await storeRoomController.editStock(
-                        stockId: stockId,
-                        processingPct: int.parse(alertProcessingPct.text),
-                        packagingPct: int.parse(alertPackagingPct.text),
-                        environmentPct: int.parse(alertEnvironmentPct.text),
-                      );
-                      if (res != null) {
-                        // show success
-                        AnimatedSnackBar.material(
-                          'Breakdown updated',
-                          type: AnimatedSnackBarType.success,
-                        ).show(context);
+                validator: (value) {
+                  final n = int.tryParse(value ?? '');
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a value';
+                  } else if (n == null) {
+                    return 'Must be a number';
+                  } else if (n < 0 || n > 100) {
+                    return 'Enter 0–100';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
 
-                        // re-fetch by ingredientId (NOT stockRecordId!)
-                        await storeRoomController.stockListApi(
-                          category: widget.categoryName!,
-                          item: ingredientId!,
-                        );
-                        // grab the new latest
-                        if (storeRoomController.stockList.isNotEmpty) {
-                          stockRecordId =
-                              storeRoomController.stockList.last.id.toString();
+              // Packaging %
+              TextFormField(
+                controller: alertPackagingPct,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: "Packaging %",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                validator: (value) {
+                  final n = int.tryParse(value ?? '');
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a value';
+                  } else if (n == null) {
+                    return 'Must be a number';
+                  } else if (n < 0 || n > 100) {
+                    return 'Enter 0–100';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+
+              // Environment %
+              TextFormField(
+                controller: alertEnvironmentPct,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: "Environment %",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                validator: (value) {
+                  final n = int.tryParse(value ?? '');
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a value';
+                  } else if (n == null) {
+                    return 'Must be a number';
+                  } else if (n < 0 || n > 100) {
+                    return 'Enter 0–100';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text("Cancel"),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        // Validate all fields first
+                        if (!_formKey.currentState!.validate()) return;
+
+                        try {
+                          final res = await storeRoomController.editStock(
+                            stockId: stockId,
+                            processingPct: int.parse(alertProcessingPct.text),
+                            packagingPct: int.parse(alertPackagingPct.text),
+                            environmentPct: int.parse(alertEnvironmentPct.text),
+                          );
+
+                          if (res != null) {
+                            AnimatedSnackBar.material(
+                              'Breakdown updated',
+                              type: AnimatedSnackBarType.success,
+                            ).show(context);
+
+                            // re-fetch by ingredientId
+                            await storeRoomController.stockListApi(
+                              category: widget.categoryName!,
+                              item: ingredientId!,
+                            );
+
+                            if (storeRoomController.stockList.isNotEmpty) {
+                              stockRecordId = storeRoomController
+                                  .stockList.last.id
+                                  .toString();
+                            }
+
+                            setState(() {});
+                            Navigator.of(context).pop();
+                          } else {
+                            // API returned error
+                            AnimatedSnackBar.material(
+                              'Failed to update. Try again.',
+                              type: AnimatedSnackBarType.error,
+                            ).show(context);
+                          }
+                        } catch (e) {
+                          AnimatedSnackBar.material(
+                            'Invalid input or network error',
+                            type: AnimatedSnackBarType.error,
+                          ).show(context);
                         }
-
-                        setState(() {});
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    child: const Text("Save"),
+                      },
+                      child: const Text("Save"),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

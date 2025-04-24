@@ -26,12 +26,6 @@ class StoreRoomScreen extends StatefulWidget {
 
 class _StoreRoomScreenState extends State<StoreRoomScreen> {
   // New list of demo storage locations
-  List<String> locationList = [
-    "Pantry",
-    "Refrigerator",
-    "Freezer",
-    "Add new location...",
-  ];
 
 // New variable to track the selected storage location
   String? selectedStorageLocation;
@@ -84,6 +78,7 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
   @override
   void initState() {
     Future.delayed(Duration.zero).then((value) => getData());
+    storeRoomController.fetchStorageLocations();
     super.initState();
   }
 
@@ -509,124 +504,125 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
 
                                               // TextFormField for storage location
                                               // Replace your storage location TextFormField with this dropdown
-                                              SizedBox(
-                                                height: height * 0.05,
-                                                child: DropdownButtonFormField<
-                                                    String>(
-                                                  value:
-                                                      selectedStorageLocation,
-                                                  hint: Text(
-                                                    "Select storage location",
-                                                    style: TextStyle(
-                                                      fontFamily: "Lexand",
-                                                      fontSize: height * 0.014,
-                                                      fontWeight:
-                                                          FontWeight.w300,
-                                                    ),
-                                                  ),
-                                                  decoration: InputDecoration(
-                                                    contentPadding:
-                                                        const EdgeInsets
-                                                            .symmetric(
-                                                            horizontal: 16.0),
-                                                    border: OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              15.0),
-                                                      borderSide:
-                                                          const BorderSide(
-                                                              width: 1.5),
-                                                    ),
-                                                  ),
-                                                  items: locationList
-                                                      .map((String location) {
-                                                    return DropdownMenuItem<
-                                                        String>(
-                                                      value: location,
-                                                      child: Text(
-                                                        location,
-                                                        style: TextStyle(
-                                                          fontFamily: "Lexand",
-                                                          fontSize:
-                                                              height * 0.016,
-                                                          fontWeight:
-                                                              FontWeight.w300,
-                                                        ),
+                                              Obx(() {
+                                                return SizedBox(
+                                                  height: height * 0.05,
+                                                  child:
+                                                      DropdownButtonFormField<
+                                                          String>(
+                                                    value:
+                                                        selectedStorageLocation,
+                                                    hint: Text(
+                                                      "Select storage location",
+                                                      style: TextStyle(
+                                                        fontFamily: "Lexand",
+                                                        fontSize:
+                                                            height * 0.014,
+                                                        fontWeight:
+                                                            FontWeight.w300,
                                                       ),
-                                                    );
-                                                  }).toList(),
-                                                  onChanged:
-                                                      (String? newValue) {
-                                                    if (newValue ==
-                                                        "Add new location...") {
-                                                      // Show a dialog to add a new location
-                                                      showDialog(
-                                                        context: context,
-                                                        builder:
-                                                            (BuildContext ctx) {
-                                                          String newLocation =
-                                                              "";
-                                                          return AlertDialog(
+                                                    ),
+                                                    decoration: InputDecoration(
+                                                      contentPadding:
+                                                          const EdgeInsets
+                                                              .symmetric(
+                                                              horizontal: 16.0),
+                                                      border:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(15.0),
+                                                        borderSide:
+                                                            const BorderSide(
+                                                                width: 1.5),
+                                                      ),
+                                                    ),
+                                                    items: storeRoomController
+                                                        .locationList
+                                                        .map((loc) =>
+                                                            DropdownMenuItem<
+                                                                String>(
+                                                              value: loc,
+                                                              child: Text(
+                                                                loc,
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontFamily:
+                                                                      "Lexand",
+                                                                  fontSize:
+                                                                      height *
+                                                                          0.016,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w300,
+                                                                ),
+                                                              ),
+                                                            ))
+                                                        .toList(),
+                                                    onChanged:
+                                                        (newValue) async {
+                                                      if (newValue ==
+                                                          "Add new location...") {
+                                                        String newLocation = "";
+                                                        await showDialog(
+                                                          context: context,
+                                                          builder: (ctx) =>
+                                                              AlertDialog(
                                                             title: Text(
                                                                 "Add a New Location"),
                                                             content: TextField(
-                                                              onChanged:
-                                                                  (value) {
-                                                                newLocation =
-                                                                    value;
-                                                              },
+                                                              onChanged: (v) =>
+                                                                  newLocation =
+                                                                      v,
                                                               decoration:
                                                                   InputDecoration(
-                                                                hintText:
-                                                                    "Enter location name",
-                                                              ),
+                                                                      hintText:
+                                                                          "Enter location name"),
                                                             ),
                                                             actions: [
                                                               TextButton(
-                                                                onPressed: () {
-                                                                  Navigator.pop(
-                                                                      ctx); // Dismiss the dialog
-                                                                },
-                                                                child: Text(
-                                                                    "Cancel"),
-                                                              ),
+                                                                  onPressed: () =>
+                                                                      Navigator
+                                                                          .pop(
+                                                                              ctx),
+                                                                  child: Text(
+                                                                      "Cancel")),
                                                               TextButton(
-                                                                onPressed: () {
+                                                                onPressed:
+                                                                    () async {
                                                                   if (newLocation
                                                                       .trim()
                                                                       .isNotEmpty) {
-                                                                    // Add the new location to the list
+                                                                    await storeRoomController
+                                                                        .createLocation(
+                                                                            newLocation);
+                                                                    await storeRoomController
+                                                                        .fetchStorageLocations();
                                                                     setState(
                                                                         () {
-                                                                      locationList.insert(
-                                                                          locationList.length -
-                                                                              1,
-                                                                          newLocation);
-                                                                      // Set it as the selected location
                                                                       selectedStorageLocation =
                                                                           newLocation;
                                                                     });
                                                                   }
                                                                   Navigator.pop(
-                                                                      ctx); // Dismiss the dialog
+                                                                      ctx);
                                                                 },
                                                                 child: Text(
                                                                     "Save"),
                                                               ),
                                                             ],
-                                                          );
-                                                        },
-                                                      );
-                                                    } else {
-                                                      // Just set the selected value
-                                                      setState(() {
-                                                        selectedStorageLocation =
-                                                            newValue;
-                                                      });
-                                                    }
-                                                  },
-                                                ),
-                                              ),
+                                                          ),
+                                                        );
+                                                      } else {
+                                                        setState(() {
+                                                          selectedStorageLocation =
+                                                              newValue;
+                                                        });
+                                                      }
+                                                    },
+                                                  ),
+                                                );
+                                              }),
 
                                               SizedBox(height: height * 0.02),
 
@@ -785,7 +781,9 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
                                                           );
 
                                                           // 4) Pass the custom ID (VEGxxx), item name, and storage location to BarcodePrintPage
-                                                          Navigator.push(
+                                                          bool? didPrint =
+                                                              await Navigator
+                                                                  .push<bool>(
                                                             parentContext,
                                                             MaterialPageRoute(
                                                               builder: (context) =>
@@ -801,6 +799,22 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
                                                               ),
                                                             ),
                                                           );
+                                                          if (didPrint ==
+                                                              true) {
+                                                            // perfect, nothing more to do
+                                                          } else {
+                                                            // print failed or was cancelled → roll back the DB insert
+                                                            await storeRoomController
+                                                                .deleteIngredientByBarcode(
+                                                                    generatedBarcode);
+                                                            Get.snackbar(
+                                                                "Print Failed",
+                                                                "Item was removed since printing did not complete.");
+                                                            // refresh UI again
+                                                            await storeRoomController
+                                                                .stroreRoomingredientsList(
+                                                                    nameOfIngeridiant);
+                                                          }
                                                         }
                                                       },
                                                       child: Padding(

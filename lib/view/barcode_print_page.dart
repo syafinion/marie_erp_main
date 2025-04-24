@@ -109,7 +109,7 @@ class _BarcodePrintPageState extends State<BarcodePrintPage> {
       if (result == "Barcode and number printed successfully") {
         // Pop back
         if (mounted) {
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       } else if (result == "Printer not paired") {
         setState(() {

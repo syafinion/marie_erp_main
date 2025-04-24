@@ -26,7 +26,7 @@ class StoreRoomController extends GetxController {
   List<dynamic> ingredientsDairyList = [];
 
   RxList<IngredientModels> ingredientList = <IngredientModels>[].obs;
-
+  RxList<String> locationList = <String>[].obs;
   //Stock List
 
   RxList<Stocks> stockList = <Stocks>[].obs;
@@ -445,6 +445,68 @@ class StoreRoomController extends GetxController {
       // LoadingWidget.endLoadingWidget();
       // PopupDialogs.displayErrorOnlyMessage(StringHelper.aPI_Crashed);
       return null;
+    }
+  }
+
+  /// Deletes the ingredient with the given barcode on your backend.
+  /// Returns true if deletion succeeded.
+  Future<bool> deleteIngredientByBarcode(String barcode) async {
+    final userId = await storage.read(key: "userId");
+    final token = await storage.read(key: "token");
+    final body = json.encode({
+      "userId": userId,
+      "barcode": barcode,
+    });
+
+    final response = await http.post(
+      Uri.parse(endPoint['deleteIngredientByBarcode']),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Cookie': 'authorization_token=$token',
+      },
+      body: body,
+    );
+
+    return response.statusCode == 200;
+  }
+
+  Future<void> fetchStorageLocations() async {
+    final token = await storage.read(key: "token");
+    final res = await http.get(
+      Uri.parse(endPoint['listLocations']), // ← use the correct key
+      headers: {
+        'Accept': 'application/json',
+        'Cookie': 'authorization_token=$token',
+      },
+    );
+    if (res.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(res.body);
+      locationList
+        ..assignAll(data.cast<String>())
+        ..add('Add new location...');
+      // NO `update()` needed—Obx will pick up the change automatically
+    }
+  }
+
+  /// POST a new storage location to your API
+  Future<void> createLocation(String newLoc) async {
+    final userId = await storage.read(key: "userId");
+    final token = await storage.read(key: "token");
+    final res = await http.post(
+      Uri.parse(endPoint['addLocation']), // ← use the correct key
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Cookie': 'authorization_token=$token',
+      },
+      body: jsonEncode({
+        'userId': userId,
+        'location': newLoc,
+      }),
+    );
+    if (res.statusCode != 200) {
+      print("createLocation failed: ${res.body}");
     }
   }
 
