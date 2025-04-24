@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:marie_erp/constants/color.dart';
 import 'package:marie_erp/controller/store_room_controller.dart';
+import 'package:marie_erp/model/IngredientModels.dart';
 import 'package:marie_erp/view/barcode_print_page.dart';
 import 'package:marie_erp/view/barcode_scanner_page.dart';
 import 'package:marie_erp/view/groups_screen.dart';
@@ -25,6 +26,55 @@ class StoreRoomScreen extends StatefulWidget {
 }
 
 class _StoreRoomScreenState extends State<StoreRoomScreen> {
+  // inside _StoreRoomScreenState
+
+  /// Ask the user to confirm, then delete via controller and reload.
+  void _confirmDelete(IngredientModels item) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Delete Ingredient?'),
+        content: Text('Are you sure you want to delete "${item.ingredient}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              // call your controller
+              final success = await storeRoomController
+                  .deleteIngredientByBarcode(item.barcode!);
+              if (success) {
+                Get.snackbar(
+                  'Deleted',
+                  '"${item.ingredient}" has been removed.',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+                // reload the list
+                await storeRoomController
+                    .stroreRoomingredientsList(nameOfIngeridiant);
+              } else {
+                Get.snackbar(
+                  'Error',
+                  'Could not delete ingredient.',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.redAccent,
+                  colorText: Colors.white,
+                );
+              }
+            },
+            child: Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // New list of demo storage locations
 
 // New variable to track the selected storage location
@@ -124,6 +174,7 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
     TextEditingController ingredientsEditController = TextEditingController();
+    final maxDropdownWidth = MediaQuery.of(context).size.width * 0.8;
     return SafeArea(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
@@ -179,698 +230,447 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
 
                                 showDialog(
                                   context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      content: StatefulBuilder(
-                                        builder: (context, setState) {
-                                          return SingleChildScrollView(
-                                            child: Column(children: [
-                                              // Text(
-                                              //   "Add an Ingredient or Unit of Measure",
-                                              //   style: TextStyle(
-                                              //     fontFamily: "Lexand",
-                                              //     fontSize: height * 0.015,
-                                              //     color: Colors.black,
-                                              //     fontWeight: FontWeight.bold,
-                                              //   ),
-                                              // ),
-                                              SizedBox(height: height * 0.02),
-
-                                              // TextFormField for ingredient name
-                                              SizedBox(
-                                                height: height * 0.05,
-                                                child: TextFormField(
-                                                  style: TextStyle(
-                                                    fontFamily: "Lexand",
-                                                    fontSize: height * 0.018,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                  controller:
-                                                      ingredientsController,
-                                                  decoration: InputDecoration(
-                                                    contentPadding:
-                                                        const EdgeInsets.only(
-                                                            left: 16.0),
-                                                    hintStyle: TextStyle(
-                                                      fontFamily: "Lexand",
-                                                      fontSize: height * 0.014,
-                                                      fontWeight:
-                                                          FontWeight.w300,
-                                                    ),
-                                                    hintText: "10kg Tomato",
-                                                    floatingLabelStyle:
-                                                        const TextStyle(
-                                                      fontFamily: "Lexand",
-                                                      fontWeight:
-                                                          FontWeight.w300,
-                                                    ),
-                                                    border: OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              15.0),
-                                                      borderSide:
-                                                          const BorderSide(
-                                                              width: 1.5),
-                                                    ),
-                                                    disabledBorder:
-                                                        OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              30.0),
-                                                      borderSide:
-                                                          const BorderSide(
-                                                              width: 1.5),
-                                                    ),
-                                                    enabledBorder:
-                                                        OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              30.0),
-                                                      borderSide: BorderSide(
-                                                        color: borderColor
-                                                            .withOpacity(1.0),
-                                                        width: 1.5,
-                                                      ),
-                                                    ),
-                                                    focusedBorder:
-                                                        OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              30.0),
-                                                      borderSide:
-                                                          const BorderSide(
-                                                              width: 1.5),
-                                                    ),
-                                                  ),
-                                                  onChanged: (value) {
-                                                    setState(() {});
-                                                  },
+                                  builder: (ctx) => StatefulBuilder(
+                                    builder: (ctx, setState) => AlertDialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      contentPadding: EdgeInsets.zero,
+                                      content: SingleChildScrollView(
+                                        padding: EdgeInsets.only(
+                                            bottom: MediaQuery.of(context)
+                                                .viewInsets
+                                                .bottom),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                              vertical: 24, horizontal: 20),
+                                          width: width * 0.9,
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                'Add Ingredient',
+                                                style: TextStyle(
+                                                  fontFamily: 'Lexand',
+                                                  fontSize: height * 0.022,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: primaryColor,
                                                 ),
                                               ),
-                                              SizedBox(height: height * 0.02),
+                                              SizedBox(height: 20),
 
-                                              // Moved the checkboxes here, below the ingredient name
-                                              Wrap(
-                                                spacing: 10.0,
+                                              // Ingredient name
+                                              TextFormField(
+                                                controller:
+                                                    ingredientsController,
+                                                decoration: InputDecoration(
+                                                  labelText: 'Ingredient',
+                                                  floatingLabelBehavior:
+                                                      FloatingLabelBehavior
+                                                          .always,
+                                                  contentPadding:
+                                                      EdgeInsets.symmetric(
+                                                          horizontal: 16,
+                                                          vertical: 12),
+                                                  border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            15),
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(height: 16),
+
+                                              // Measurement + Weight row
+
+                                              Row(
                                                 children: [
-                                                  Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Checkbox(
-                                                        value: isLooseChecked,
-                                                        onChanged:
-                                                            (bool? value) {
-                                                          setState(() {
-                                                            isLooseChecked =
-                                                                value ?? false;
-                                                          });
-                                                        },
+                                                  // <-- Measurement
+                                                  Flexible(
+                                                    fit: FlexFit.loose,
+                                                    child:
+                                                        DropdownButtonFormField<
+                                                            String>(
+                                                      isExpanded: true,
+                                                      value: selectedUnit,
+                                                      hint: Text(
+                                                        'Measurement',
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
                                                       ),
-                                                      Text("Loose"),
-                                                    ],
+                                                      items: [
+                                                        'kg',
+                                                        'litre',
+                                                        'unit'
+                                                      ]
+                                                          .map((u) =>
+                                                              DropdownMenuItem(
+                                                                  value: u,
+                                                                  child:
+                                                                      Text(u)))
+                                                          .toList(),
+                                                      onChanged: (v) =>
+                                                          setState(() =>
+                                                              selectedUnit = v),
+                                                      decoration:
+                                                          InputDecoration(
+                                                        isDense: true,
+                                                        contentPadding:
+                                                            EdgeInsets
+                                                                .symmetric(
+                                                                    horizontal:
+                                                                        12,
+                                                                    vertical:
+                                                                        8),
+                                                        border:
+                                                            OutlineInputBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(15),
+                                                        ),
+                                                      ),
+                                                    ),
                                                   ),
-                                                  Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Checkbox(
-                                                        value: isCartonChecked,
-                                                        onChanged:
-                                                            (bool? value) {
-                                                          setState(() {
-                                                            isCartonChecked =
-                                                                value ?? false;
-                                                          });
-                                                        },
+
+                                                  SizedBox(width: 12),
+
+                                                  // <-- Weight
+                                                  Expanded(
+                                                    child: TextFormField(
+                                                      controller:
+                                                          packageWeightController,
+                                                      decoration:
+                                                          InputDecoration(
+                                                        labelText: 'Weight',
+                                                        floatingLabelBehavior:
+                                                            FloatingLabelBehavior
+                                                                .always,
+                                                        isDense: true,
+                                                        contentPadding:
+                                                            EdgeInsets
+                                                                .symmetric(
+                                                                    horizontal:
+                                                                        12,
+                                                                    vertical:
+                                                                        8),
+                                                        border:
+                                                            OutlineInputBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(15),
+                                                        ),
                                                       ),
-                                                      Text("Carton"),
-                                                    ],
-                                                  ),
-                                                  Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Checkbox(
-                                                        value: isBagChecked,
-                                                        onChanged:
-                                                            (bool? value) {
-                                                          setState(() {
-                                                            isBagChecked =
-                                                                value ?? false;
-                                                          });
-                                                        },
-                                                      ),
-                                                      Text("Bag"),
-                                                    ],
+                                                    ),
                                                   ),
                                                 ],
                                               ),
-                                              SizedBox(height: height * 0.02),
 
-                                              // Dropdown for measurement
-                                              Container(
-                                                height: height * 0.05,
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          30.0),
-                                                  border: Border.all(
-                                                    color: borderColor
-                                                        .withOpacity(1.0),
-                                                    width: 1.5,
+                                              SizedBox(height: 16),
+
+                                              // Containers
+                                              Wrap(
+                                                spacing: 16,
+                                                children: [
+                                                  ChoiceChip(
+                                                    label: Text('Loose'),
+                                                    selected: isLooseChecked,
+                                                    onSelected: (v) =>
+                                                        setState(() {
+                                                      isLooseChecked = v;
+                                                      isCartonChecked = false;
+                                                      isBagChecked = false;
+                                                    }),
                                                   ),
-                                                ),
-                                                child: DropdownButtonFormField<
-                                                    String>(
-                                                  hint: Text(
-                                                    "Select measurement",
-                                                    style: TextStyle(
-                                                      fontFamily: "Lexand",
-                                                      fontSize: height * 0.014,
-                                                      fontWeight:
-                                                          FontWeight.w300,
-                                                    ),
+                                                  ChoiceChip(
+                                                    label: Text('Carton'),
+                                                    selected: isCartonChecked,
+                                                    onSelected: (v) =>
+                                                        setState(() {
+                                                      isCartonChecked = v;
+                                                      isLooseChecked = false;
+                                                      isBagChecked = false;
+                                                    }),
                                                   ),
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 10),
-                                                  value: selectedUnit,
-                                                  iconEnabledColor:
-                                                      primaryColor,
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          30.0),
-                                                  onChanged:
-                                                      (String? newValue) {
-                                                    setState(() {
-                                                      selectedUnit = newValue!;
-                                                    });
-                                                  },
-                                                  items: <String>[
-                                                    'kg',
-                                                    'litre',
-                                                    'unit',
-                                                  ].map<
-                                                          DropdownMenuItem<
-                                                              String>>(
-                                                      (String value) {
-                                                    return DropdownMenuItem<
-                                                        String>(
-                                                      value: value,
-                                                      child: Text(
-                                                        value,
-                                                        style: TextStyle(
-                                                          fontFamily: "Lexand",
-                                                          fontSize:
-                                                              height * 0.018,
-                                                          fontWeight:
-                                                              FontWeight.w300,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }).toList(),
-                                                  decoration: InputDecoration(
-                                                    border: InputBorder.none,
-                                                    contentPadding:
-                                                        EdgeInsets.zero,
-                                                    floatingLabelStyle:
-                                                        TextStyle(
-                                                      fontFamily: "Lexand",
-                                                      fontSize: height * 0.013,
-                                                      fontWeight:
-                                                          FontWeight.w300,
-                                                    ),
+                                                  ChoiceChip(
+                                                    label: Text('Bag'),
+                                                    selected: isBagChecked,
+                                                    onSelected: (v) =>
+                                                        setState(() {
+                                                      isBagChecked = v;
+                                                      isLooseChecked = false;
+                                                      isCartonChecked = false;
+                                                    }),
                                                   ),
-                                                ),
+                                                ],
                                               ),
-                                              SizedBox(height: height * 0.02),
+                                              SizedBox(height: 16),
 
-                                              // TextFormField for package weight
-                                              SizedBox(
-                                                height: height * 0.05,
-                                                child: TextFormField(
-                                                  style: TextStyle(
-                                                    fontFamily: "Lexand",
-                                                    fontSize: height * 0.018,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                  controller:
-                                                      packageWeightController,
-                                                  decoration: InputDecoration(
-                                                    hintText:
-                                                        "Enter package weight",
-                                                    hintStyle: TextStyle(
-                                                      fontFamily: "Lexand",
-                                                      fontSize: height * 0.014,
-                                                      fontWeight:
-                                                          FontWeight.w300,
-                                                    ),
-                                                    floatingLabelStyle:
-                                                        TextStyle(
-                                                      fontFamily: "Lexand",
-                                                      fontWeight:
-                                                          FontWeight.w300,
-                                                    ),
-                                                    contentPadding:
-                                                        const EdgeInsets.only(
-                                                            left: 16.0),
-                                                    border: OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              15.0),
-                                                      borderSide:
-                                                          const BorderSide(
-                                                              width: 1.5),
-                                                    ),
-                                                    disabledBorder:
-                                                        OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              30.0),
-                                                      borderSide:
-                                                          const BorderSide(
-                                                              width: 1.5),
-                                                    ),
-                                                    enabledBorder:
-                                                        OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              30.0),
-                                                      borderSide: BorderSide(
-                                                        color: borderColor
-                                                            .withOpacity(1.0),
-                                                        width: 1.5,
-                                                      ),
-                                                    ),
-                                                    focusedBorder:
-                                                        OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              30.0),
-                                                      borderSide:
-                                                          const BorderSide(
-                                                              width: 1.5),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              SizedBox(height: height * 0.02),
-
-                                              // TextFormField for unit price
-                                              // SizedBox(
-                                              //   height: height * 0.05,
-                                              //   child: TextFormField(
-                                              //     controller:
-                                              //         unitPriceController,
-                                              //     decoration: InputDecoration(
-                                              //       hintText:
-                                              //           "Enter unit price",
-                                              //       contentPadding:
-                                              //           const EdgeInsets.only(
-                                              //               left: 16.0),
-                                              //       border: OutlineInputBorder(
-                                              //         borderRadius:
-                                              //             BorderRadius.circular(
-                                              //                 15.0),
-                                              //         borderSide:
-                                              //             const BorderSide(
-                                              //                 width: 1.5),
-                                              //       ),
-                                              //     ),
-                                              //   ),
-                                              // ),
-                                              // SizedBox(height: height * 0.02),
-
-                                              // TextFormField for storage location
-                                              // Replace your storage location TextFormField with this dropdown
-                                              Obx(() {
-                                                return SizedBox(
-                                                  height: height * 0.05,
-                                                  child:
-                                                      DropdownButtonFormField<
-                                                          String>(
-                                                    value:
-                                                        selectedStorageLocation,
+                                              // Storage location
+                                              ConstrainedBox(
+                                                constraints: BoxConstraints(
+                                                    maxWidth: maxDropdownWidth),
+                                                child: Obx(() {
+                                                  final locs =
+                                                      storeRoomController
+                                                          .locationList;
+                                                  return DropdownButtonFormField<
+                                                      String>(
+                                                    isExpanded:
+                                                        true, // fill the maxWidth
+                                                    value: locs.contains(
+                                                            selectedStorageLocation)
+                                                        ? selectedStorageLocation
+                                                        : null,
                                                     hint: Text(
-                                                      "Select storage location",
-                                                      style: TextStyle(
-                                                        fontFamily: "Lexand",
-                                                        fontSize:
-                                                            height * 0.014,
-                                                        fontWeight:
-                                                            FontWeight.w300,
-                                                      ),
-                                                    ),
-                                                    decoration: InputDecoration(
-                                                      contentPadding:
-                                                          const EdgeInsets
-                                                              .symmetric(
-                                                              horizontal: 16.0),
-                                                      border:
-                                                          OutlineInputBorder(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(15.0),
-                                                        borderSide:
-                                                            const BorderSide(
-                                                                width: 1.5),
-                                                      ),
-                                                    ),
-                                                    items: storeRoomController
-                                                        .locationList
-                                                        .map((loc) =>
-                                                            DropdownMenuItem<
-                                                                String>(
-                                                              value: loc,
-                                                              child: Text(
-                                                                loc,
-                                                                style:
-                                                                    TextStyle(
-                                                                  fontFamily:
-                                                                      "Lexand",
-                                                                  fontSize:
-                                                                      height *
-                                                                          0.016,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w300,
-                                                                ),
-                                                              ),
-                                                            ))
-                                                        .toList(),
+                                                        'Storage Location'),
+                                                    items: locs.map((loc) {
+                                                      return DropdownMenuItem(
+                                                        value: loc,
+                                                        child: Text(
+                                                          loc,
+                                                          overflow: TextOverflow
+                                                              .ellipsis, // ellipsize in menu
+                                                        ),
+                                                      );
+                                                    }).toList(),
+                                                    // this builds the selected‐value widget, also ellipsized
+                                                    selectedItemBuilder:
+                                                        (ctx) =>
+                                                            locs.map((loc) {
+                                                      return Text(
+                                                        loc,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      );
+                                                    }).toList(),
+
                                                     onChanged:
                                                         (newValue) async {
                                                       if (newValue ==
-                                                          "Add new location...") {
-                                                        String newLocation = "";
-                                                        await showDialog(
+                                                          'Add new location...') {
+                                                        // your “Add new” dialog logic stays the same…
+                                                        final newLoc =
+                                                            await showDialog<
+                                                                String>(
                                                           context: context,
                                                           builder: (ctx) =>
                                                               AlertDialog(
                                                             title: Text(
-                                                                "Add a New Location"),
+                                                                'Add Location'),
                                                             content: TextField(
-                                                              onChanged: (v) =>
-                                                                  newLocation =
-                                                                      v,
+                                                              controller:
+                                                                  storageLocationController,
                                                               decoration:
                                                                   InputDecoration(
                                                                       hintText:
-                                                                          "Enter location name"),
+                                                                          'Enter location name'),
                                                             ),
                                                             actions: [
                                                               TextButton(
-                                                                  onPressed: () =>
-                                                                      Navigator
-                                                                          .pop(
-                                                                              ctx),
-                                                                  child: Text(
-                                                                      "Cancel")),
-                                                              TextButton(
-                                                                onPressed:
-                                                                    () async {
-                                                                  if (newLocation
-                                                                      .trim()
-                                                                      .isNotEmpty) {
-                                                                    await storeRoomController
-                                                                        .createLocation(
-                                                                            newLocation);
-                                                                    await storeRoomController
-                                                                        .fetchStorageLocations();
-                                                                    setState(
-                                                                        () {
-                                                                      selectedStorageLocation =
-                                                                          newLocation;
-                                                                    });
-                                                                  }
-                                                                  Navigator.pop(
-                                                                      ctx);
-                                                                },
+                                                                onPressed: () =>
+                                                                    Navigator
+                                                                        .pop(
+                                                                            ctx),
                                                                 child: Text(
-                                                                    "Save"),
+                                                                    'Cancel'),
+                                                              ),
+                                                              ElevatedButton(
+                                                                onPressed: () {
+                                                                  final t =
+                                                                      storageLocationController
+                                                                          .text
+                                                                          .trim();
+                                                                  if (t
+                                                                      .isNotEmpty)
+                                                                    Navigator
+                                                                        .pop(
+                                                                            ctx,
+                                                                            t);
+                                                                },
+                                                                child:
+                                                                    Text('Add'),
                                                               ),
                                                             ],
                                                           ),
                                                         );
+                                                        storageLocationController
+                                                            .clear();
+
+                                                        if (newLoc != null) {
+                                                          final idx = locs.indexOf(
+                                                              'Add new location...');
+                                                          storeRoomController
+                                                              .locationList
+                                                              .insert(
+                                                            idx >= 0
+                                                                ? idx
+                                                                : locs.length,
+                                                            newLoc,
+                                                          );
+                                                          setState(() =>
+                                                              selectedStorageLocation =
+                                                                  newLoc);
+                                                          // optionally fire API off in the background
+                                                          storeRoomController
+                                                              .createLocation(
+                                                                  newLoc);
+                                                        }
                                                       } else {
-                                                        setState(() {
-                                                          selectedStorageLocation =
-                                                              newValue;
-                                                        });
+                                                        setState(() =>
+                                                            selectedStorageLocation =
+                                                                newValue);
                                                       }
                                                     },
-                                                  ),
-                                                );
-                                              }),
-
-                                              SizedBox(height: height * 0.02),
+                                                    decoration: InputDecoration(
+                                                      contentPadding:
+                                                          EdgeInsets.symmetric(
+                                                              horizontal: 16),
+                                                      border:
+                                                          OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(15),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }),
+                                              ),
+                                              SizedBox(height: 24),
 
                                               // Buttons
                                               Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.end,
                                                 children: [
-                                                  Expanded(
-                                                    child: InkWell(
-                                                      onTap: () {
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Padding(
-                                                        padding: EdgeInsets
-                                                            .symmetric(
-                                                                horizontal:
-                                                                    width *
-                                                                        0.02),
-                                                        child: Container(
-                                                          height: height * 0.04,
-                                                          width: width,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            border: Border.all(
-                                                              color: buttonColor
-                                                                  .withOpacity(
-                                                                      1.0),
-                                                            ),
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        15.0),
-                                                          ),
-                                                          child: Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(8.0),
-                                                            child: Center(
-                                                              child: Text(
-                                                                "Cancel",
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontFamily:
-                                                                      "Lexand",
-                                                                  fontSize:
-                                                                      height *
-                                                                          0.011,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w700,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.pop(context),
+                                                    child: Text('Cancel'),
+                                                  ),
+                                                  SizedBox(width: 12),
+                                                  ElevatedButton(
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(15),
                                                       ),
                                                     ),
-                                                  ),
-                                                  Expanded(
-                                                    child: InkWell(
-                                                      onTap: () async {
-                                                        if (selectedUnit ==
-                                                                null ||
-                                                            ingredientsController
-                                                                .text
-                                                                .trim()
-                                                                .isEmpty ||
+                                                    onPressed: () async {
+                                                      // ─── VALIDATION ─────────────────────────────────────────
+                                                      if (ingredientsController
+                                                              .text
+                                                              .trim()
+                                                              .isEmpty ||
+                                                          selectedUnit ==
+                                                              null ||
+                                                          packageWeightController
+                                                              .text
+                                                              .trim()
+                                                              .isEmpty ||
+                                                          selectedStorageLocation ==
+                                                              null) {
+                                                        Get.snackbar('Error',
+                                                            'All fields are required');
+                                                        return;
+                                                      }
+
+                                                      // ─── BUILD YOUR DATA ─────────────────────────────────────
+                                                      final ingName =
+                                                          ingredientsController
+                                                              .text
+                                                              .trim();
+                                                      final loc =
+                                                          selectedStorageLocation!;
+                                                      final barcode =
+                                                          List.generate(
+                                                                  12,
+                                                                  (_) => Random()
+                                                                      .nextInt(
+                                                                          10))
+                                                              .join();
+                                                      final code =
+                                                          'VEG${Random().nextInt(900) + 100}';
+
+                                                      // ─── CALL CREATE INGREDIENT API ──────────────────────────
+                                                      final result =
+                                                          await storeRoomController
+                                                              .createIngredient(
+                                                        category:
+                                                            nameOfIngeridiant,
+                                                        ingredient: ingName,
+                                                        measurement:
+                                                            selectedUnit!,
+                                                        isLoose: isLooseChecked,
+                                                        isCarton:
+                                                            isCartonChecked,
+                                                        isBag: isBagChecked,
+                                                        packageWeight:
                                                             packageWeightController
                                                                 .text
-                                                                .trim()
-                                                                .isEmpty ||
-                                                            selectedStorageLocation ==
-                                                                null ||
-                                                            selectedStorageLocation!
-                                                                .trim()
-                                                                .isEmpty) {
-                                                          // Show an error message, e.g.:
-                                                          Get.snackbar('Error',
-                                                              'All fields are required');
-                                                          return;
-                                                        }
+                                                                .trim(),
+                                                        storageLocation: loc,
+                                                        barcode: barcode,
+                                                        itemCode: code,
+                                                      );
 
-                                                        // 1) Grab the itemName & storage location FIRST
-                                                        String tempItemName =
-                                                            ingredientsController
-                                                                .text
-                                                                .trim();
-                                                        String
-                                                            tempStorageLocation =
-                                                            selectedStorageLocation!
-                                                                .trim();
+                                                      if (result == null) {
+                                                        Get.snackbar('Error',
+                                                            'Failed to save ingredient');
+                                                        return;
+                                                      }
 
-                                                        // Generate a random 12-digit barcode
-                                                        String
-                                                            generatedBarcode =
-                                                            List.generate(
-                                                          12,
-                                                          (_) => Random()
-                                                              .nextInt(10),
-                                                        ).join();
+                                                      // ─── CLOSE THE DIALOG ───────────────────────────────────
+                                                      Navigator.pop(context);
 
-                                                        // 2) Generate a custom ID: e.g., "VEG" + a random 3-digit number
-                                                        //    (You could get more fancy, e.g. increment from a DB, etc.)
-                                                        String customID = "VEG" +
-                                                            (Random().nextInt(
-                                                                        900) +
-                                                                    100)
-                                                                .toString();
+                                                      // ─── RELOAD YOUR LIST ───────────────────────────────────
+                                                      await storeRoomController
+                                                          .stroreRoomingredientsList(
+                                                              nameOfIngeridiant);
 
-                                                        var result =
-                                                            await storeRoomController
-                                                                .createIngredient(
-                                                          category:
-                                                              nameOfIngeridiant,
-                                                          ingredient:
-                                                              tempItemName,
-                                                          measurement:
-                                                              selectedUnit,
-                                                          isLoose:
-                                                              isLooseChecked,
-                                                          isCarton:
-                                                              isCartonChecked,
-                                                          isBag: isBagChecked,
-                                                          packageWeight:
-                                                              packageWeightController
-                                                                  .text,
-                                                          storageLocation:
-                                                              tempStorageLocation,
-                                                          barcode:
-                                                              generatedBarcode,
-                                                          itemCode:
-                                                              customID, // Replace with dynamically generated barcode
-                                                        );
-
-                                                        if (result != null) {
-                                                          // Clear controllers
-                                                          ingredientsController
-                                                              .clear();
-                                                          packageWeightController
-                                                              .clear();
-                                                          selectedStorageLocation =
-                                                              null;
-                                                          selectedUnit = null;
-                                                          isLooseChecked =
-                                                              false;
-                                                          isCartonChecked =
-                                                              false;
-                                                          isBagChecked = false;
-                                                          setState(() {});
-                                                          Navigator.pop(
-                                                              context);
-                                                          await storeRoomController
-                                                              .stroreRoomingredientsList(
-                                                            nameOfIngeridiant,
-                                                          );
-
-                                                          // 4) Pass the custom ID (VEGxxx), item name, and storage location to BarcodePrintPage
-                                                          bool? didPrint =
-                                                              await Navigator
-                                                                  .push<bool>(
-                                                            parentContext,
-                                                            MaterialPageRoute(
-                                                              builder: (context) =>
-                                                                  BarcodePrintPage(
-                                                                barcodeData:
-                                                                    generatedBarcode,
-                                                                itemCode:
-                                                                    customID, // <-- New
-                                                                itemName:
-                                                                    tempItemName,
-                                                                storageLocation:
-                                                                    tempStorageLocation,
-                                                              ),
-                                                            ),
-                                                          );
-                                                          if (didPrint ==
-                                                              true) {
-                                                            // perfect, nothing more to do
-                                                          } else {
-                                                            // print failed or was cancelled → roll back the DB insert
-                                                            await storeRoomController
-                                                                .deleteIngredientByBarcode(
-                                                                    generatedBarcode);
-                                                            Get.snackbar(
-                                                                "Print Failed",
-                                                                "Item was removed since printing did not complete.");
-                                                            // refresh UI again
-                                                            await storeRoomController
-                                                                .stroreRoomingredientsList(
-                                                                    nameOfIngeridiant);
-                                                          }
-                                                        }
-                                                      },
-                                                      child: Padding(
-                                                        padding: EdgeInsets
-                                                            .symmetric(
-                                                                horizontal:
-                                                                    width *
-                                                                        0.02),
-                                                        child: Container(
-                                                          height: height * 0.04,
-                                                          width: width,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: buttonColor
-                                                                .withOpacity(
-                                                                    1.0),
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        15.0),
-                                                          ),
-                                                          child: Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(8.0),
-                                                            child: Center(
-                                                              child: Text(
-                                                                "Save",
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontFamily:
-                                                                      "Lexand",
-                                                                  fontSize:
-                                                                      height *
-                                                                          0.011,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w700,
-                                                                ),
-                                                              ),
-                                                            ),
+                                                      // ─── NAVIGATE TO PRINT PAGE ─────────────────────────────
+                                                      final didPrint =
+                                                          await Navigator.push<
+                                                              bool>(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (_) =>
+                                                              BarcodePrintPage(
+                                                            barcodeData:
+                                                                barcode,
+                                                            itemCode: code,
+                                                            itemName: ingName,
+                                                            storageLocation:
+                                                                loc,
                                                           ),
                                                         ),
-                                                      ),
-                                                    ),
+                                                      );
+
+                                                      // ─── IF PRINT FAILED, ROLL BACK ─────────────────────────
+                                                      if (didPrint != true) {
+                                                        await storeRoomController
+                                                            .deleteIngredientByBarcode(
+                                                                barcode);
+                                                        Get.snackbar(
+                                                            'Print failed',
+                                                            'Your ingredient was removed');
+                                                        await storeRoomController
+                                                            .stroreRoomingredientsList(
+                                                                nameOfIngeridiant);
+                                                      }
+                                                    },
+                                                    child: Text('Save'),
                                                   ),
                                                 ],
-                                              ),
-                                            ]),
-                                          );
-                                        },
+                                              )
+                                            ],
+                                          ),
+                                        ),
                                       ),
-                                    );
-                                  },
+                                    ),
+                                  ),
                                 );
                               },
                               child: Icon(
@@ -1080,450 +880,410 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
                                                   ),
                                                   InkWell(
                                                     onTap: () {
-                                                      selectedUnit =
+                                                      final item =
                                                           storeRoomController
-                                                              .ingredientList[i]
-                                                              .measurement;
-                                                      isLooseChecked =
-                                                          storeRoomController
-                                                                  .ingredientList[
-                                                                      i]
-                                                                  .isLoose ??
-                                                              false;
-                                                      isCartonChecked =
-                                                          storeRoomController
-                                                                  .ingredientList[
-                                                                      i]
-                                                                  .isCarton ??
-                                                              false;
-                                                      isBagChecked =
-                                                          storeRoomController
-                                                                  .ingredientList[
-                                                                      i]
-                                                                  .isBag ??
-                                                              false;
-
-                                                      // Initialize the controllers with existing values
-                                                      packageWeightController
-                                                          .text = storeRoomController
-                                                              .ingredientList[i]
-                                                              .packageWeight ??
-                                                          '';
-                                                      unitPriceController.text =
-                                                          storeRoomController
-                                                                  .ingredientList[
-                                                                      i]
-                                                                  .unitPrice ??
-                                                              '';
-                                                      storageLocationController
-                                                          .text = storeRoomController
-                                                              .ingredientList[i]
-                                                              .storageLocation ??
-                                                          '';
+                                                              .ingredientList[i];
+                                                      // 1) prefill all your controllers, including unitPrice:
                                                       ingredientsEditController
                                                               .text =
-                                                          storeRoomController
-                                                                  .ingredientList[
-                                                                      i]
-                                                                  .ingredient ??
+                                                          item.ingredient ?? '';
+                                                      selectedUnit =
+                                                          item.measurement;
+                                                      packageWeightController
+                                                              .text =
+                                                          item.packageWeight ??
                                                               '';
+                                                      unitPriceController.text =
+                                                          item.unitPrice ?? '';
+                                                      isLooseChecked =
+                                                          item.isLoose ?? false;
+                                                      isCartonChecked =
+                                                          item.isCarton ??
+                                                              false;
+                                                      isBagChecked =
+                                                          item.isBag ?? false;
+                                                      selectedStorageLocation =
+                                                          item.storageLocation;
 
                                                       showDialog(
                                                         context: context,
-                                                        builder: (context) {
+                                                        builder: (ctx) =>
+                                                            StatefulBuilder(
+                                                                builder: (ctx,
+                                                                    setState) {
                                                           return AlertDialog(
+                                                            shape:
+                                                                RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          20),
+                                                            ),
+                                                            contentPadding:
+                                                                EdgeInsets.zero,
                                                             content:
-                                                                StatefulBuilder(
-                                                              builder: (context,
-                                                                  setState) {
-                                                                return SingleChildScrollView(
-                                                                  child: Column(
-                                                                    crossAxisAlignment:
-                                                                        CrossAxisAlignment
-                                                                            .start,
-                                                                    children: [
-                                                                      Text(
-                                                                        "Edit Ingredient",
-                                                                        style: TextStyle(
-                                                                            fontFamily:
-                                                                                "Lexand",
-                                                                            fontSize: height *
-                                                                                0.014,
-                                                                            fontWeight:
-                                                                                FontWeight.bold,
-                                                                            color: Colors.black),
-                                                                      ),
-                                                                      SizedBox(
-                                                                          height:
-                                                                              20),
-                                                                      SizedBox(
-                                                                        height: height *
-                                                                            0.05,
-                                                                        child:
-                                                                            TextFormField(
-                                                                          style:
-                                                                              TextStyle(
-                                                                            fontFamily:
-                                                                                "Lexand",
-                                                                            fontSize:
-                                                                                height * 0.018,
-                                                                            fontWeight:
-                                                                                FontWeight.w500,
-                                                                          ),
-                                                                          controller:
-                                                                              ingredientsEditController,
-                                                                          decoration:
-                                                                              InputDecoration(
-                                                                            contentPadding:
-                                                                                const EdgeInsets.only(left: 16.0),
-                                                                            label:
-                                                                                Text(
-                                                                              "",
-                                                                              style: TextStyle(
-                                                                                fontFamily: "Lexand",
-                                                                                fontSize: height * 0.018,
-                                                                                fontWeight: FontWeight.w300,
-                                                                              ),
-                                                                            ),
-                                                                            floatingLabelStyle:
-                                                                                const TextStyle(
-                                                                              fontFamily: "Lexand",
-                                                                              fontWeight: FontWeight.w300,
-                                                                            ),
-                                                                            border:
-                                                                                OutlineInputBorder(
-                                                                              borderRadius: BorderRadius.circular(15.0),
-                                                                              borderSide: const BorderSide(width: 1.5),
-                                                                            ),
-                                                                            disabledBorder:
-                                                                                OutlineInputBorder(
-                                                                              borderRadius: BorderRadius.circular(30.0),
-                                                                              borderSide: const BorderSide(width: 1.5),
-                                                                            ),
-                                                                            enabledBorder:
-                                                                                OutlineInputBorder(
-                                                                              borderRadius: BorderRadius.circular(30.0),
-                                                                              borderSide: BorderSide(
-                                                                                color: borderColor.withOpacity(1.0),
-                                                                                width: 1.5,
-                                                                              ),
-                                                                            ),
-                                                                            focusedBorder:
-                                                                                OutlineInputBorder(
-                                                                              borderRadius: BorderRadius.circular(30.0),
-                                                                              borderSide: const BorderSide(width: 1.5),
-                                                                            ),
-                                                                          ),
-                                                                          onChanged:
-                                                                              (value) {
-                                                                            setState(() {});
-                                                                          },
-                                                                        ),
-                                                                      ),
-                                                                      SizedBox(
-                                                                          height:
-                                                                              height * 0.02),
-                                                                      Container(
-                                                                        height: height *
-                                                                            0.05,
-                                                                        decoration:
-                                                                            BoxDecoration(
-                                                                          borderRadius:
-                                                                              BorderRadius.circular(30.0),
-                                                                          border:
-                                                                              Border.all(
-                                                                            color:
-                                                                                borderColor.withOpacity(1.0),
-                                                                            width:
-                                                                                1.5,
-                                                                          ),
-                                                                        ),
-                                                                        child: DropdownButtonFormField<
-                                                                            String>(
-                                                                          hint:
-                                                                              Text(
-                                                                            "Select measurement",
-                                                                            style:
-                                                                                TextStyle(
-                                                                              fontFamily: "Lexand",
-                                                                              fontSize: height * 0.018,
-                                                                              fontWeight: FontWeight.w300,
-                                                                            ),
-                                                                          ),
-                                                                          padding: const EdgeInsets
-                                                                              .only(
-                                                                              left: 10,
-                                                                              bottom: 5,
-                                                                              right: 10),
-                                                                          value:
-                                                                              selectedUnit,
-                                                                          iconEnabledColor:
+                                                                SingleChildScrollView(
+                                                              padding: EdgeInsets.only(
+                                                                  bottom: MediaQuery.of(
+                                                                          context)
+                                                                      .viewInsets
+                                                                      .bottom),
+                                                              child: Container(
+                                                                padding: EdgeInsets
+                                                                    .symmetric(
+                                                                        vertical:
+                                                                            24,
+                                                                        horizontal:
+                                                                            20),
+                                                                width: MediaQuery.of(
+                                                                            context)
+                                                                        .size
+                                                                        .width *
+                                                                    0.9,
+                                                                child: Column(
+                                                                  mainAxisSize:
+                                                                      MainAxisSize
+                                                                          .min,
+                                                                  children: [
+                                                                    Text(
+                                                                        'Edit Ingredient',
+                                                                        style:
+                                                                            TextStyle(
+                                                                          fontFamily:
+                                                                              'Lexand',
+                                                                          fontSize:
+                                                                              MediaQuery.of(context).size.height * 0.022,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          color:
                                                                               primaryColor,
-                                                                          borderRadius:
-                                                                              BorderRadius.circular(30.0),
-                                                                          onChanged:
-                                                                              (String? newValue) {
-                                                                            setState(() {
-                                                                              selectedUnit = newValue!;
-                                                                            });
-                                                                          },
+                                                                        )),
+                                                                    SizedBox(
+                                                                        height:
+                                                                            20),
+
+                                                                    // ─── Name ────────────────────────────────────────────────
+                                                                    TextFormField(
+                                                                      controller:
+                                                                          ingredientsEditController,
+                                                                      decoration:
+                                                                          InputDecoration(
+                                                                        labelText:
+                                                                            'Ingredient',
+                                                                        floatingLabelBehavior:
+                                                                            FloatingLabelBehavior.always,
+                                                                        contentPadding: EdgeInsets.symmetric(
+                                                                            horizontal:
+                                                                                16,
+                                                                            vertical:
+                                                                                12),
+                                                                        border: OutlineInputBorder(
+                                                                            borderRadius:
+                                                                                BorderRadius.circular(15)),
+                                                                      ),
+                                                                    ),
+                                                                    SizedBox(
+                                                                        height:
+                                                                            16),
+
+                                                                    // ─── Measurement + Weight ─────────────────────────────────
+                                                                    Row(
+                                                                      children: [
+                                                                        Flexible(
+                                                                          fit: FlexFit
+                                                                              .loose,
+                                                                          child:
+                                                                              DropdownButtonFormField<String>(
+                                                                            isExpanded:
+                                                                                true,
+                                                                            value:
+                                                                                selectedUnit,
+                                                                            hint:
+                                                                                Text('Measurement', overflow: TextOverflow.ellipsis),
+                                                                            items:
+                                                                                [
+                                                                              'kg',
+                                                                              'litre',
+                                                                              'unit'
+                                                                            ].map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
+                                                                            onChanged: (v) =>
+                                                                                setState(() => selectedUnit = v),
+                                                                            decoration:
+                                                                                InputDecoration(
+                                                                              isDense: true,
+                                                                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        SizedBox(
+                                                                            width:
+                                                                                12),
+                                                                        Expanded(
+                                                                          child:
+                                                                              TextFormField(
+                                                                            controller:
+                                                                                packageWeightController,
+                                                                            decoration:
+                                                                                InputDecoration(
+                                                                              labelText: 'Weight',
+                                                                              floatingLabelBehavior: FloatingLabelBehavior.always,
+                                                                              isDense: true,
+                                                                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                    SizedBox(
+                                                                        height:
+                                                                            16),
+
+                                                                    // ─── Unit Price ───────────────────────────────────────────
+                                                                    TextFormField(
+                                                                      controller:
+                                                                          unitPriceController,
+                                                                      keyboardType:
+                                                                          TextInputType
+                                                                              .number,
+                                                                      decoration:
+                                                                          InputDecoration(
+                                                                        labelText:
+                                                                            'Unit Price',
+                                                                        floatingLabelBehavior:
+                                                                            FloatingLabelBehavior.always,
+                                                                        isDense:
+                                                                            true,
+                                                                        contentPadding: EdgeInsets.symmetric(
+                                                                            horizontal:
+                                                                                12,
+                                                                            vertical:
+                                                                                8),
+                                                                        border: OutlineInputBorder(
+                                                                            borderRadius:
+                                                                                BorderRadius.circular(15)),
+                                                                      ),
+                                                                    ),
+                                                                    SizedBox(
+                                                                        height:
+                                                                            16),
+
+                                                                    // ─── Choice Chips ─────────────────────────────────────────
+                                                                    Wrap(
+                                                                      spacing:
+                                                                          16,
+                                                                      children: [
+                                                                        ChoiceChip(
+                                                                          label:
+                                                                              Text('Loose'),
+                                                                          selected:
+                                                                              isLooseChecked,
+                                                                          onSelected: (v) =>
+                                                                              setState(() {
+                                                                            isLooseChecked =
+                                                                                v;
+                                                                            isCartonChecked =
+                                                                                false;
+                                                                            isBagChecked =
+                                                                                false;
+                                                                          }),
+                                                                        ),
+                                                                        ChoiceChip(
+                                                                          label:
+                                                                              Text('Carton'),
+                                                                          selected:
+                                                                              isCartonChecked,
+                                                                          onSelected: (v) =>
+                                                                              setState(() {
+                                                                            isCartonChecked =
+                                                                                v;
+                                                                            isLooseChecked =
+                                                                                false;
+                                                                            isBagChecked =
+                                                                                false;
+                                                                          }),
+                                                                        ),
+                                                                        ChoiceChip(
+                                                                          label:
+                                                                              Text('Bag'),
+                                                                          selected:
+                                                                              isBagChecked,
+                                                                          onSelected: (v) =>
+                                                                              setState(() {
+                                                                            isBagChecked =
+                                                                                v;
+                                                                            isLooseChecked =
+                                                                                false;
+                                                                            isCartonChecked =
+                                                                                false;
+                                                                          }),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                    SizedBox(
+                                                                        height:
+                                                                            16),
+
+// ─── Storage Location ─────────────────────────────────────────────────
+                                                                    ConstrainedBox(
+                                                                      constraints:
+                                                                          BoxConstraints(
+                                                                              maxWidth: maxDropdownWidth),
+                                                                      child: Obx(
+                                                                          () {
+                                                                        final locs =
+                                                                            storeRoomController.locationList;
+                                                                        return DropdownButtonFormField<
+                                                                            String>(
+                                                                          isExpanded:
+                                                                              true,
+                                                                          value: locs.contains(selectedStorageLocation)
+                                                                              ? selectedStorageLocation
+                                                                              : null,
+                                                                          hint:
+                                                                              Text('Storage Location'),
                                                                           items:
-                                                                              <String>[
-                                                                            'kg',
-                                                                            'litre',
-                                                                            'unit'
-                                                                          ].map<DropdownMenuItem<String>>((String value) {
-                                                                            return DropdownMenuItem<String>(
-                                                                              value: value,
-                                                                              child: Padding(
-                                                                                padding: EdgeInsets.symmetric(horizontal: 10),
-                                                                                child: Text(
-                                                                                  value,
-                                                                                  style: TextStyle(
-                                                                                    fontFamily: "Lexand",
-                                                                                    fontSize: height * 0.018,
-                                                                                    fontWeight: FontWeight.w300,
-                                                                                  ),
-                                                                                ),
-                                                                              ),
+                                                                              locs.map((loc) {
+                                                                            return DropdownMenuItem(
+                                                                              value: loc,
+                                                                              child: Text(loc, overflow: TextOverflow.ellipsis),
                                                                             );
                                                                           }).toList(),
-                                                                          decoration:
-                                                                              InputDecoration(
-                                                                            border:
-                                                                                InputBorder.none,
-                                                                            contentPadding:
-                                                                                EdgeInsets.zero,
-                                                                            floatingLabelStyle:
-                                                                                TextStyle(
-                                                                              fontFamily: "Lexand",
-                                                                              fontSize: height * 0.013,
-                                                                              fontWeight: FontWeight.w300,
-                                                                            ),
-                                                                          ),
-                                                                          alignment:
-                                                                              Alignment.topLeft,
-                                                                        ),
-                                                                      ),
-                                                                      SizedBox(
-                                                                          height:
-                                                                              height * 0.02),
-                                                                      // Add TextFormField for packageWeight
-                                                                      SizedBox(
-                                                                        height: height *
-                                                                            0.05,
-                                                                        child:
-                                                                            TextFormField(
-                                                                          controller:
-                                                                              packageWeightController,
-                                                                          decoration:
-                                                                              InputDecoration(
-                                                                            hintText:
-                                                                                "Enter package weight",
-                                                                            contentPadding:
-                                                                                const EdgeInsets.only(left: 16.0),
-                                                                            border:
-                                                                                OutlineInputBorder(
-                                                                              borderRadius: BorderRadius.circular(15.0),
-                                                                              borderSide: const BorderSide(width: 1.5),
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                      SizedBox(
-                                                                          height:
-                                                                              height * 0.02),
-                                                                      // Add TextFormField for unitPrice
-                                                                      // SizedBox(
-                                                                      //   height: height *
-                                                                      //       0.05,
-                                                                      //   child:
-                                                                      //       TextFormField(
-                                                                      //     controller:
-                                                                      //         unitPriceController,
-                                                                      //     decoration:
-                                                                      //         InputDecoration(
-                                                                      //       hintText:
-                                                                      //           "Enter unit price",
-                                                                      //       contentPadding:
-                                                                      //           const EdgeInsets.only(left: 16.0),
-                                                                      //       border:
-                                                                      //           OutlineInputBorder(
-                                                                      //         borderRadius: BorderRadius.circular(15.0),
-                                                                      //         borderSide: const BorderSide(width: 1.5),
-                                                                      //       ),
-                                                                      //     ),
-                                                                      //   ),
-                                                                      // ),
-                                                                      SizedBox(
-                                                                          height:
-                                                                              height * 0.02),
-                                                                      // Add TextFormField for storageLocation
-                                                                      SizedBox(
-                                                                        height: height *
-                                                                            0.05,
-                                                                        child:
-                                                                            TextFormField(
-                                                                          controller:
-                                                                              storageLocationController,
-                                                                          decoration:
-                                                                              InputDecoration(
-                                                                            hintText:
-                                                                                "Enter storage location",
-                                                                            contentPadding:
-                                                                                const EdgeInsets.only(left: 16.0),
-                                                                            border:
-                                                                                OutlineInputBorder(
-                                                                              borderRadius: BorderRadius.circular(15.0),
-                                                                              borderSide: const BorderSide(width: 1.5),
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                      SizedBox(
-                                                                          height:
-                                                                              height * 0.02),
-                                                                      // Use Wrap instead of Row for checkboxes
-                                                                      Wrap(
-                                                                        spacing:
-                                                                            10.0,
-                                                                        children: [
-                                                                          Row(
-                                                                            mainAxisSize:
-                                                                                MainAxisSize.min,
-                                                                            children: [
-                                                                              Checkbox(
-                                                                                value: isLooseChecked,
-                                                                                onChanged: (bool? value) {
-                                                                                  setState(() {
-                                                                                    isLooseChecked = value ?? false;
-                                                                                  });
-                                                                                },
-                                                                              ),
-                                                                              Text("Loose"),
-                                                                            ],
-                                                                          ),
-                                                                          Row(
-                                                                            mainAxisSize:
-                                                                                MainAxisSize.min,
-                                                                            children: [
-                                                                              Checkbox(
-                                                                                value: isCartonChecked,
-                                                                                onChanged: (bool? value) {
-                                                                                  setState(() {
-                                                                                    isCartonChecked = value ?? false;
-                                                                                  });
-                                                                                },
-                                                                              ),
-                                                                              Text("Carton"),
-                                                                            ],
-                                                                          ),
-                                                                          Row(
-                                                                            mainAxisSize:
-                                                                                MainAxisSize.min,
-                                                                            children: [
-                                                                              Checkbox(
-                                                                                value: isBagChecked,
-                                                                                onChanged: (bool? value) {
-                                                                                  setState(() {
-                                                                                    isBagChecked = value ?? false;
-                                                                                  });
-                                                                                },
-                                                                              ),
-                                                                              Text("Bag"),
-                                                                            ],
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                      SizedBox(
-                                                                        height: height *
-                                                                            0.02,
-                                                                      ),
-                                                                      Row(
-                                                                        children: [
-                                                                          Expanded(
-                                                                            child:
-                                                                                InkWell(
-                                                                              onTap: () {
-                                                                                Navigator.pop(context);
-                                                                              },
-                                                                              child: Padding(
-                                                                                padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                                                                                child: Container(
-                                                                                  height: height * 0.04,
-                                                                                  width: width,
-                                                                                  decoration: BoxDecoration(
-                                                                                    border: Border.all(color: buttonColor.withOpacity(1.0)),
-                                                                                    borderRadius: BorderRadius.circular(15.0),
+                                                                          selectedItemBuilder: (ctx) =>
+                                                                              locs.map((loc) {
+                                                                            return Text(loc,
+                                                                                overflow: TextOverflow.ellipsis);
+                                                                          }).toList(),
+                                                                          onChanged:
+                                                                              (newValue) async {
+                                                                            if (newValue ==
+                                                                                'Add new location...') {
+                                                                              final newLoc = await showDialog<String>(
+                                                                                context: context,
+                                                                                builder: (ctx) => AlertDialog(
+                                                                                  title: Text('Add Location'),
+                                                                                  content: TextField(
+                                                                                    controller: storageLocationController,
+                                                                                    decoration: InputDecoration(hintText: 'Enter location name'),
                                                                                   ),
-                                                                                  child: Padding(
-                                                                                    padding: const EdgeInsets.all(8.0),
-                                                                                    child: Center(
-                                                                                      child: Text(
-                                                                                        "Cancel",
-                                                                                        style: TextStyle(color: buttonColor.withOpacity(1.0), fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                                                                                      ),
+                                                                                  actions: [
+                                                                                    TextButton(
+                                                                                      onPressed: () => Navigator.pop(ctx),
+                                                                                      child: Text('Cancel'),
                                                                                     ),
-                                                                                  ),
+                                                                                    ElevatedButton(
+                                                                                      onPressed: () {
+                                                                                        final t = storageLocationController.text.trim();
+                                                                                        if (t.isNotEmpty) Navigator.pop(ctx, t);
+                                                                                      },
+                                                                                      child: Text('Add'),
+                                                                                    ),
+                                                                                  ],
                                                                                 ),
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                          Expanded(
-                                                                            child:
-                                                                                InkWell(
-                                                                              onTap: () async {
-                                                                                if (selectedUnit == null || ingredientsEditController.text == '' || packageWeightController.text == '' || selectedStorageLocation == null || selectedStorageLocation!.trim().isEmpty) {
-                                                                                  // Show an error message
-                                                                                  return;
-                                                                                }
-                                                                                await storeRoomController.storRoomingrediantEdit(
-                                                                                  ingredient: ingredientsEditController.text,
-                                                                                  ingredientId: storeRoomController.ingredientList[i].ingredientId!,
-                                                                                  isChecked: storeRoomController.ingredientList[i].isChecked!,
-                                                                                  measurement: selectedUnit,
-                                                                                  isLoose: isLooseChecked,
-                                                                                  isCarton: isCartonChecked,
-                                                                                  isBag: isBagChecked,
-                                                                                  packageWeight: packageWeightController.text,
-                                                                                  unitPrice: unitPriceController.text,
-                                                                                  storageLocation: storageLocationController.text,
+                                                                              );
+                                                                              storageLocationController.clear();
+                                                                              if (newLoc != null) {
+                                                                                final idx = locs.indexOf('Add new location...');
+                                                                                storeRoomController.locationList.insert(
+                                                                                  idx >= 0 ? idx : locs.length,
+                                                                                  newLoc,
                                                                                 );
-                                                                                setState(() {});
-                                                                                Navigator.pop(context);
-                                                                                await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
-                                                                              },
-                                                                              child: Padding(
-                                                                                padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                                                                                child: Container(
-                                                                                  height: height * 0.04,
-                                                                                  width: width,
-                                                                                  decoration: BoxDecoration(
-                                                                                    color: buttonColor.withOpacity(1.0),
-                                                                                    borderRadius: BorderRadius.circular(15.0),
-                                                                                  ),
-                                                                                  child: Padding(
-                                                                                    padding: const EdgeInsets.all(8.0),
-                                                                                    child: Center(
-                                                                                      child: Text(
-                                                                                        "Save",
-                                                                                        style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.011, fontWeight: FontWeight.w700),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                              ),
+                                                                                setState(() => selectedStorageLocation = newLoc);
+                                                                                // fire off API in background
+                                                                                storeRoomController.createLocation(newLoc);
+                                                                              }
+                                                                            } else {
+                                                                              setState(() => selectedStorageLocation = newValue);
+                                                                            }
+                                                                          },
+                                                                          decoration:
+                                                                              InputDecoration(
+                                                                            contentPadding:
+                                                                                EdgeInsets.symmetric(horizontal: 16),
+                                                                            border:
+                                                                                OutlineInputBorder(
+                                                                              borderRadius: BorderRadius.circular(15),
                                                                             ),
-                                                                          )
-                                                                        ],
-                                                                      )
-                                                                    ],
-                                                                  ),
-                                                                );
-                                                              },
+                                                                          ),
+                                                                        );
+                                                                      }),
+                                                                    ),
+
+                                                                    // ─── Buttons ────────────────────────────────────────────────
+                                                                    SizedBox(
+                                                                        height:
+                                                                            24),
+                                                                    Row(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .end,
+                                                                      children: [
+                                                                        TextButton(
+                                                                          onPressed: () =>
+                                                                              Navigator.pop(ctx),
+                                                                          child:
+                                                                              Text('Cancel'),
+                                                                        ),
+                                                                        SizedBox(
+                                                                            width:
+                                                                                12),
+                                                                        ElevatedButton(
+                                                                          style:
+                                                                              ElevatedButton.styleFrom(
+                                                                            shape:
+                                                                                RoundedRectangleBorder(
+                                                                              borderRadius: BorderRadius.circular(15),
+                                                                            ),
+                                                                          ),
+                                                                          onPressed:
+                                                                              () async {
+                                                                            // ─── Validation ─────────────────────────
+                                                                            if (ingredientsEditController.text.trim().isEmpty ||
+                                                                                selectedUnit == null ||
+                                                                                packageWeightController.text.trim().isEmpty ||
+                                                                                unitPriceController.text.trim().isEmpty ||
+                                                                                selectedStorageLocation == null) {
+                                                                              Get.snackbar('Error', 'All fields are required');
+                                                                              return;
+                                                                            }
+
+                                                                            // ─── Call your API ──────────────────────
+                                                                            final resp =
+                                                                                await storeRoomController.storRoomingrediantEdit(
+                                                                              ingredient: ingredientsEditController.text.trim(),
+                                                                              ingredientId: item.ingredientId!,
+                                                                              isChecked: item.isChecked ?? false,
+                                                                              measurement: selectedUnit!,
+                                                                              isLoose: isLooseChecked,
+                                                                              isCarton: isCartonChecked,
+                                                                              isBag: isBagChecked,
+                                                                              packageWeight: packageWeightController.text.trim(),
+                                                                              unitPrice: unitPriceController.text.trim(),
+                                                                              storageLocation: selectedStorageLocation!,
+                                                                            );
+
+                                                                            if (resp ==
+                                                                                null) {
+                                                                              Get.snackbar('Error', 'Failed to update ingredient');
+                                                                              return;
+                                                                            }
+
+                                                                            // ─── Refresh & close ───────────────────
+                                                                            Navigator.pop(ctx);
+                                                                            await storeRoomController.stroreRoomingredientsList(nameOfIngeridiant);
+                                                                          },
+                                                                          child:
+                                                                              Text('Save'),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
                                                             ),
                                                           );
-                                                        },
+                                                        }),
                                                       );
                                                     },
                                                     child: Icon(
@@ -1535,7 +1295,25 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
                                                           ? Colors.white
                                                           : Colors.black,
                                                     ),
-                                                  )
+                                                  ),
+
+                                                  SizedBox(width: 16),
+
+                                                  // ─── Delete button ────────────────────
+                                                  InkWell(
+                                                    onTap: () => _confirmDelete(
+                                                        storeRoomController
+                                                            .ingredientList[i]),
+                                                    child: Icon(
+                                                      Icons.delete_outline,
+                                                      size: 20,
+                                                      color: storeRoomController
+                                                              .ingredientList[i]
+                                                              .isChecked!
+                                                          ? Colors.white70
+                                                          : Colors.redAccent,
+                                                    ),
+                                                  ),
                                                 ],
                                               ),
                                             ),
