@@ -1,35 +1,3 @@
-class StockListModel {
-  String? userId;
-  String? category;
-  String? item;
-  List<Stocks>? stocks;
-
-  StockListModel({this.userId, this.category, this.item, this.stocks});
-
-  StockListModel.fromJson(Map<String, dynamic> json) {
-    userId = json['userId'];
-    category = json['category'];
-    item = json['item'];
-    if (json['stocks'] != null) {
-      stocks = <Stocks>[];
-      json['stocks'].forEach((v) {
-        stocks!.add(new Stocks.fromJson(v));
-      });
-    }
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['userId'] = this.userId;
-    data['category'] = this.category;
-    data['item'] = this.item;
-    if (this.stocks != null) {
-      data['stocks'] = this.stocks!.map((v) => v.toJson()).toList();
-    }
-    return data;
-  }
-}
-
 class Stocks {
   String? id;
   String? restaurant;
@@ -39,54 +7,77 @@ class Stocks {
   String? planToBuy;
   String? bought;
   String? pricePerUnit;
-  dynamic? closingStock;
-  dynamic? consumption;
+  String? closingStock;
+  String? consumption;
   String? datecreated;
   String? unit;
 
-  Stocks(
-      {this.id,
-        this.restaurant,
-        this.category,
-        this.item,
-        this.stockCount,
-        this.planToBuy,
-        this.bought,
-        this.pricePerUnit,
-        this.closingStock,
-        this.consumption,
-        this.datecreated,
-        this.unit});
+  // ← new fields for your breakdown
+  final int processingPct;
+  final int packagingPct;
+  final int environmentPct;
 
-  Stocks.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    restaurant = json['restaurant'];
-    category = json['category'];
-    item = json['item'];
-    stockCount = json['stockCount'];
-    planToBuy = json['planToBuy'];
-    bought = json['bought'];
-    pricePerUnit = json['pricePerUnit'];
-    closingStock = json['closingStock'];
-    consumption = json['consumption'];
-    datecreated = json['datecreated'];
-    unit = json['unit'];
-  }
+  Stocks({
+    this.id,
+    this.restaurant,
+    this.category,
+    this.item,
+    this.stockCount,
+    this.planToBuy,
+    this.bought,
+    this.pricePerUnit,
+    this.closingStock,
+    this.consumption,
+    this.datecreated,
+    this.unit,
+    required this.processingPct,
+    required this.packagingPct,
+    required this.environmentPct,
+  });
+
+  Stocks.fromJson(Map<String, dynamic> json)
+      : id = json['id']?.toString(),
+        restaurant = json['restaurant']?.toString(),
+        category = json['category']?.toString(),
+        item = json['item']?.toString(),
+        stockCount = json['stockCount']?.toString(),
+        planToBuy = json['planToBuy']?.toString(),
+        bought = json['bought']?.toString(),
+        pricePerUnit = json['pricePerUnit']?.toString(),
+        closingStock = json['closingStock']?.toString(),
+        consumption = json['consumption']?.toString(),
+        datecreated = json['datecreated']?.toString(),
+        unit = json['unit']?.toString(),
+
+        // <<< HERE are your three new mappings >>>
+        processingPct = json['processing_pct'] is int
+            ? json['processing_pct']
+            : int.tryParse(json['processing_pct']?.toString() ?? '0') ?? 0,
+        packagingPct = json['packaging_pct'] is int
+            ? json['packaging_pct']
+            : int.tryParse(json['packaging_pct']?.toString() ?? '0') ?? 0,
+        environmentPct = json['environment_pct'] is int
+            ? json['environment_pct']
+            : int.tryParse(json['environment_pct']?.toString() ?? '0') ?? 0;
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['restaurant'] = this.restaurant;
-    data['category'] = this.category;
-    data['item'] = this.item;
-    data['stockCount'] = this.stockCount;
-    data['planToBuy'] = this.planToBuy;
-    data['bought'] = this.bought;
-    data['pricePerUnit'] = this.pricePerUnit;
-    data['closingStock'] = this.closingStock;
-    data['consumption'] = this.consumption;
-    data['datecreated'] = this.datecreated;
-    data['unit'] = this.unit;
-    return data;
+    return {
+      'id': id,
+      'restaurant': restaurant,
+      'category': category,
+      'item': item,
+      'stockCount': stockCount,
+      'planToBuy': planToBuy,
+      'bought': bought,
+      'pricePerUnit': pricePerUnit,
+      'closingStock': closingStock,
+      'consumption': consumption,
+      'datecreated': datecreated,
+      'unit': unit,
+      // and make sure you serialize them back if you ever need to
+      'processing_pct': processingPct,
+      'packaging_pct': packagingPct,
+      'environment_pct': environmentPct,
+    };
   }
 }

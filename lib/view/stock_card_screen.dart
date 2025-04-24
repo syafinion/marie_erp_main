@@ -14,7 +14,7 @@ import '../controller/groups_controller.dart';
 import 'save_file_mobile.dart';
 import 'stock_card_edit_screen.dart';
 // NEW: import our list screen
-import 'stock_card_list_screen.dart';
+// import 'stock_card_list_screen.dart';
 
 class StockCardScreen extends StatefulWidget {
   const StockCardScreen({super.key});
@@ -261,18 +261,10 @@ class _StockCardScreenState extends State<StockCardScreen> {
               itemBuilder: (context, index) {
                 return InkWell(
                   onTap: () {
-                    // Navigate to the list screen when user selects a category
-                    selectedItem = index;
-                    categoryName = groups[index].name;
-                    setState(() {});
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => StockCardListScreen(
-                          categoryName: categoryName ?? '',
-                        ),
-                      ),
-                    );
+                    setState(() {
+                      selectedItem = index;
+                      categoryName = groups[index].name;
+                    });
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -526,90 +518,90 @@ class _StockCardScreenState extends State<StockCardScreen> {
   }
 
   // Example PDF generation code remains unchanged
-  Future<void> generateInvoice(List<dynamic>? data) async {
-    final PdfDocument document = PdfDocument();
-    final PdfPage page = document.pages.add();
-    final Size pageSize = page.getClientSize();
-    String? currency = await storage.read(key: "currency");
+  // Future<void> generateInvoice(List<dynamic>? data) async {
+  //   final PdfDocument document = PdfDocument();
+  //   final PdfPage page = document.pages.add();
+  //   final Size pageSize = page.getClientSize();
+  //   String? currency = await storage.read(key: "currency");
 
-    final PdfGrid grid = getGrid(data, currency);
-    await drawGrid(page, grid, data, pageSize);
+  //   final PdfGrid grid = getGrid(data, currency);
+  //   await drawGrid(page, grid, data, pageSize);
 
-    final List<int> bytes = document.saveSync();
-    document.dispose();
+  //   final List<int> bytes = document.saveSync();
+  //   document.dispose();
 
-    await saveAndLaunchFile(
-        bytes, "${DateTime.now().microsecondsSinceEpoch}.pdf");
-  }
+  //   await saveAndLaunchFile(
+  //       bytes, "${DateTime.now().microsecondsSinceEpoch}.pdf");
+  // }
 
-  Future drawGrid(
-      PdfPage page, PdfGrid grid, List<dynamic>? data, Size pageSize) async {
-    grid.draw(
-      page: page,
-      bounds: Rect.fromLTWH(
-          0, 0, page.getClientSize().width, page.getClientSize().height),
-    );
-  }
+  // Future drawGrid(
+  //     PdfPage page, PdfGrid grid, List<dynamic>? data, Size pageSize) async {
+  //   grid.draw(
+  //     page: page,
+  //     bounds: Rect.fromLTWH(
+  //         0, 0, page.getClientSize().width, page.getClientSize().height),
+  //   );
+  // }
 
-  PdfGrid getGrid(List<dynamic>? data, String? currency) {
-    final PdfGrid grid = PdfGrid();
-    grid.columns.add(count: 10);
-    final PdfGridRow headerRow = grid.headers.add(1)[0];
-    headerRow.style.backgroundBrush = PdfSolidBrush(PdfColor(68, 114, 196));
-    headerRow.style.font = PdfStandardFont(PdfFontFamily.helvetica, 7.5);
-    headerRow.style.textBrush = PdfBrushes.white;
-    headerRow.cells[0].value = 'No';
-    headerRow.cells[0].stringFormat.alignment = PdfTextAlignment.center;
-    headerRow.cells[1].value = 'Category';
-    headerRow.cells[2].value = 'Item';
-    headerRow.cells[3].value = 'Stock';
-    headerRow.cells[4].value = 'PlanToBuy';
-    headerRow.cells[5].value = 'Bought';
-    headerRow.cells[6].value = 'Price';
-    headerRow.cells[7].value = 'Consumption';
-    headerRow.cells[8].value = 'ClosingStock';
-    headerRow.cells[9].value = 'Date';
-    headerRow.cells[9].stringFormat.alignment = PdfTextAlignment.center;
+  // PdfGrid getGrid(List<dynamic>? data, String? currency) {
+  //   final PdfGrid grid = PdfGrid();
+  //   grid.columns.add(count: 10);
+  //   final PdfGridRow headerRow = grid.headers.add(1)[0];
+  //   headerRow.style.backgroundBrush = PdfSolidBrush(PdfColor(68, 114, 196));
+  //   headerRow.style.font = PdfStandardFont(PdfFontFamily.helvetica, 7.5);
+  //   headerRow.style.textBrush = PdfBrushes.white;
+  //   headerRow.cells[0].value = 'No';
+  //   headerRow.cells[0].stringFormat.alignment = PdfTextAlignment.center;
+  //   headerRow.cells[1].value = 'Category';
+  //   headerRow.cells[2].value = 'Item';
+  //   headerRow.cells[3].value = 'Stock';
+  //   headerRow.cells[4].value = 'PlanToBuy';
+  //   headerRow.cells[5].value = 'Bought';
+  //   headerRow.cells[6].value = 'Price';
+  //   headerRow.cells[7].value = 'Consumption';
+  //   headerRow.cells[8].value = 'ClosingStock';
+  //   headerRow.cells[9].value = 'Date';
+  //   headerRow.cells[9].stringFormat.alignment = PdfTextAlignment.center;
 
-    if (data != null) {
-      for (int i = 0; i < data.length; i++) {
-        addProducts('${i + 1}', data[i], grid, currency);
-      }
-    }
+  //   if (data != null) {
+  //     for (int i = 0; i < data.length; i++) {
+  //       addProducts('${i + 1}', data[i], grid, currency);
+  //     }
+  //   }
 
-    grid.applyBuiltInStyle(PdfGridBuiltInStyle.listTable4Accent5);
-    grid.columns[1].width = 100;
-    grid.columns[0].width = 20;
+  //   grid.applyBuiltInStyle(PdfGridBuiltInStyle.listTable4Accent5);
+  //   grid.columns[1].width = 100;
+  //   grid.columns[0].width = 20;
 
-    for (int i = 0; i < grid.rows.count; i++) {
-      final PdfGridRow row = grid.rows[i];
-      for (int j = 0; j < row.cells.count; j++) {
-        final PdfGridCell cell = row.cells[j];
-        if (j == 0) {
-          cell.stringFormat.alignment = PdfTextAlignment.center;
-        }
-        cell.style.cellPadding =
-            PdfPaddings(bottom: 5, left: 1, right: 1, top: 5);
-      }
-    }
-    return grid;
-  }
+  //   for (int i = 0; i < grid.rows.count; i++) {
+  //     final PdfGridRow row = grid.rows[i];
+  //     for (int j = 0; j < row.cells.count; j++) {
+  //       final PdfGridCell cell = row.cells[j];
+  //       if (j == 0) {
+  //         cell.stringFormat.alignment = PdfTextAlignment.center;
+  //       }
+  //       cell.style.cellPadding =
+  //           PdfPaddings(bottom: 5, left: 1, right: 1, top: 5);
+  //     }
+  //   }
+  //   return grid;
+  // }
 
-  void addProducts(
-      String productId, dynamic data, PdfGrid grid, String? currency) {
-    final PdfGridRow row = grid.rows.add();
-    row.style =
-        PdfGridRowStyle(font: PdfStandardFont(PdfFontFamily.helvetica, 7.5));
+  // void addProducts(
+  //     String productId, dynamic data, PdfGrid grid, String? currency) {
+  //   final PdfGridRow row = grid.rows.add();
+  //   row.style =
+  //       PdfGridRowStyle(font: PdfStandardFont(PdfFontFamily.helvetica, 7.5));
 
-    row.cells[0].value = productId;
-    row.cells[1].value = data["datas"][0]["category"] ?? "";
-    row.cells[2].value = data["datas"][0]["item"] ?? "";
-    row.cells[3].value = "${data["datas"][0]["stockCount"] ?? "0"} Kg";
-    row.cells[4].value = "${data["datas"][0]["planToBuy"] ?? "0"} kg";
-    row.cells[5].value = "${data["datas"][0]["bought"] ?? "0"} kg";
-    row.cells[6].value = "$currency ${data["datas"][0]["pricePerUnit"] ?? "0"}";
-    row.cells[7].value = "${data["datas"][0]["consumption"] ?? "0"} kg";
-    row.cells[8].value = "${data["datas"][0]["closingStock"] ?? "0"} kg";
-    row.cells[9].value = data["datas"][0]["datecreated"] ?? "";
-  }
+  //   row.cells[0].value = productId;
+  //   row.cells[1].value = data["datas"][0]["category"] ?? "";
+  //   row.cells[2].value = data["datas"][0]["item"] ?? "";
+  //   row.cells[3].value = "${data["datas"][0]["stockCount"] ?? "0"} Kg";
+  //   row.cells[4].value = "${data["datas"][0]["planToBuy"] ?? "0"} kg";
+  //   row.cells[5].value = "${data["datas"][0]["bought"] ?? "0"} kg";
+  //   row.cells[6].value = "$currency ${data["datas"][0]["pricePerUnit"] ?? "0"}";
+  //   row.cells[7].value = "${data["datas"][0]["consumption"] ?? "0"} kg";
+  //   row.cells[8].value = "${data["datas"][0]["closingStock"] ?? "0"} kg";
+  //   row.cells[9].value = data["datas"][0]["datecreated"] ?? "";
+  // }
 }

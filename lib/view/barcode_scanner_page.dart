@@ -66,36 +66,35 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
     }
   }
 
+  // 1) Update the signature of updateStock to accept price:
   Future<void> updateStock({
     required String ingredientId,
     required String type,
     required String quantity,
+    required String price, // ← new
   }) async {
     setState(() {
       isLoading = true;
     });
 
     try {
-      // Construct the request payload
       final Map<String, dynamic> payload = {
         'ingredient_id': ingredientId,
         'type': type,
-        'quantity': int.parse(quantity), // Ensure quantity is an integer
-        'remarks': 'Stock adjustment via scanner', // Optional remarks
-        'user_id': null, // Pass null or a valid user_id
+        'quantity': int.parse(quantity),
+        'price_per_unit': double.parse(price), // ← include price here
+        'remarks': 'Stock adjustment via scanner',
+        'user_id': null,
       };
 
-      // Debugging: Print the payload
       print('Payload sent to API: $payload');
 
-      // Send the request to the API
       final response = await http.post(
         Uri.parse(manageStockUrl),
         body: jsonEncode(payload),
         headers: {'Content-Type': 'application/json'},
       );
 
-      // Check response status
       if (response.statusCode == 201) {
         Get.snackbar('Success', 'Stock updated successfully');
       } else {
@@ -337,24 +336,29 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
-                                  child: ElevatedButton(
+                                  child: // 2) In the AlertDialog’s Save button:
+                                      ElevatedButton(
                                     onPressed: () async {
-                                      if (quantityController.text.isNotEmpty) {
+                                      final qtyText =
+                                          quantityController.text.trim();
+                                      final priceText =
+                                          priceController.text.trim();
+
+                                      if (qtyText.isNotEmpty &&
+                                          priceText.isNotEmpty) {
                                         await updateStock(
                                           ingredientId: ingredientId.toString(),
                                           type:
                                               widget.ingredientId == 'stock_in'
                                                   ? 'in'
                                                   : 'out',
-                                          quantity:
-                                              quantityController.text.trim(),
+                                          quantity: qtyText,
+                                          price: priceText, // ← pass price here
                                         );
                                         Navigator.pop(context);
                                       } else {
-                                        Get.snackbar(
-                                          'Error',
-                                          'Please enter a quantity',
-                                        );
+                                        Get.snackbar('Error',
+                                            'Please enter both quantity and price');
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(

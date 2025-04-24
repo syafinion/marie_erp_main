@@ -448,105 +448,112 @@ class StoreRoomController extends GetxController {
     }
   }
 
-  Future<dynamic> stockListApi({String? category, String? item}) async {
-    try {
-      // LoadingWidget.startLoadingWidget();
-      var userId = await storage.read(key: "userId");
-      var token = await storage.read(key: "token");
-      var body =
-          json.encode({"userId": userId, "category": category, "item": item});
-
-      if (kDebugMode) {
-        print(";;;;;;;;;;;;;;;;;$body");
-      }
-
-      final response = await http.post(Uri.parse(endPoint['stockList']),
-          // contentType: "application/json",
-          headers: {
-            'Accept': 'application/json',
-            'Cookie': 'authorization_token=$token'
-          },
-          body: body);
-
-      var result = jsonDecode(response.body);
-      // Check if the response is successful
-      print("${result} ==>result");
-      if (response.statusCode == 200) {
-        StockListModel stockListModel = await StockListModel.fromJson(result);
-        if (stockListModel != null) {
-          stockList.value = stockListModel.stocks!;
-        }
-        print("${stockListModel.toJson()} ```````````");
-        return result;
-      } else if (response.statusCode == 400) {
-        print("${response.statusCode} --------> statuscode");
-        StockListModel stockListModel = await StockListModel.fromJson(result);
-        print("${stockListModel.toJson()} -----?");
-
-        var data = jsonEncode(stockListModel);
-
-        print("${data} --------aaaaaaaaa");
-
-        return data;
-      }
-    } catch (error) {
-      if (kDebugMode) {
-        print("${error} error");
-      }
-      return null;
-    }
-  }
-
-  Future<dynamic> editStock({
-    String? stockId,
-    String? stockCount,
-    String? planToBuy,
-    String? bought,
-    String? pricePerUnit,
+  Future<void> stockListApi({
+    required String category,
+    required String item,
   }) async {
     try {
-      var userId = await storage.read(key: "userId");
-      var token = await storage.read(key: "token");
+      final userId = await storage.read(key: "userId");
+      final token = await storage.read(key: "token");
 
-      // Create the ingredientsData object
-      var ingredientsData = {
-        "stockCount": stockCount,
-        "planToBuy": planToBuy,
-        "bought": bought,
-        "pricePerUnit": pricePerUnit,
-      };
-      // Create the body JSON structure
-      var body = json.encode({
+      final body = json.encode({
         "userId": userId,
-        "stockId": stockId,
-        "ingredientsData": ingredientsData,
+        "category": category,
+        "item": item,
       });
 
-      if (kDebugMode) {
-        print("Request body: $body");
-      }
+      if (kDebugMode) print("→ stockListApi request: $body");
 
       final response = await http.post(
-        Uri.parse(endPoint['stockEdits']),
+        Uri.parse(endPoint['stockList']),
         headers: {
           'Accept': 'application/json',
-          'Cookie': 'authorization_token=$token'
+          'Content-Type': 'application/json',
+          'Cookie': 'authorization_token=$token',
         },
         body: body,
       );
 
-      // Check if the response is successful
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> result = json.decode(response.body);
+
+        // your Laravel should now be returning:
+        // { "stocks": [ { id:..., stockCount:..., planToBuy:..., pricePerUnit:..., consumption:..., closingStock:... }, … ] }
+        final List<dynamic> raw = result['stocks'] as List<dynamic>;
+
+        // build your RxList<Stocks>
+        stockList.value =
+            raw.map((e) => Stocks.fromJson(e as Map<String, dynamic>)).toList();
+
+        if (kDebugMode) {
+          print("→ parsed ${stockList.length} stock cards");
+        }
+      } else {
+        // handle errors…
+        if (kDebugMode) {
+          print("stockListApi failed ${response.statusCode}: ${response.body}");
+        }
+      }
+    } catch (err) {
+      if (kDebugMode) {
+        print("stockListApi exception: $err");
+      }
+    }
+  }
+
+  Future<dynamic> editStock({
+    required String stockId,
+    required int processingPct,
+    required int packagingPct,
+    required int environmentPct,
+  }) async {
+    try {
+      // 1. Read stored credentials
+      final userId = await storage.read(key: "userId");
+      final token = await storage.read(key: "token");
+
+      // 2. Build request payload
+      final body = json.encode({
+        "userId": userId,
+        "stockId": stockId,
+        "ingredientsData": {
+          "processing_pct": processingPct,
+          "packaging_pct": packagingPct,
+          "environment_pct": environmentPct,
+        }
+      });
+
+      if (kDebugMode) {
+        print("→ editStock payload: $body");
+      }
+
+      // 3. POST to your Laravel endpoint
+      final response = await http.post(
+        Uri.parse(endPoint['stockEdits']),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Cookie': 'authorization_token=$token',
+        },
+        body: body,
+      );
+
+      // 4. Handle the response
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
+        if (kDebugMode) {
+          print("← editStock response: $jsonResponse");
+        }
         return jsonResponse;
       } else {
-        print('Request failed with status: ${response.statusCode}');
+        if (kDebugMode) {
+          print("editStock failed (${response.statusCode}): ${response.body}");
+        }
         return null;
       }
     } catch (error) {
-      // Handle any exceptions that occur
       if (kDebugMode) {
-        print('Error in editStock: $error');
+        print("Exception in editStock: $error");
       }
       return null;
     }
@@ -555,8 +562,10 @@ class StoreRoomController extends GetxController {
   Future<dynamic> addStock({
     String? category,
     String? item,
-    String? planToBuy,
     String? stockCount,
+    String? planToBuy,
+    String? bought, // ← add this
+    String? pricePerUnit, // ← and this
     String? date,
   }) async {
     try {

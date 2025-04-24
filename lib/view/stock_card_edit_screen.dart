@@ -9,11 +9,66 @@ import 'package:intl/intl.dart';
 import 'package:marie_erp/constants/groupes_list.dart';
 import 'package:marie_erp/model/IngredientModels.dart';
 import 'package:marie_erp/model/StockListModel.dart';
-
+import 'package:pie_chart/pie_chart.dart';
 import '../constants/color.dart';
 import 'dart:math' as math;
 
 import '../controller/store_room_controller.dart';
+
+class _MetricCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final double percent;
+  final Color color;
+  final IconData icon;
+
+  const _MetricCard({
+    Key? key,
+    required this.title,
+    required this.value,
+    required this.percent,
+    required this.color,
+    required this.icon, // <-- trailing comma is fine
+  }) : super(key: key); // ← closing parenthesis here
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Card(
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: color.withOpacity(0.15),
+                child: Icon(icon, color: color),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(color: Colors.grey.shade600)),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontFamily: "Lexand",
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text("${percent.toStringAsFixed(0)}%",
+                      style: TextStyle(color: color)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class StockCardEditScreen extends StatefulWidget {
   final String? categoryName;
@@ -40,6 +95,11 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
   TextEditingController alertPlanToBuy = TextEditingController();
   TextEditingController alertBoughtCount = TextEditingController();
   TextEditingController alertUnitPrice = TextEditingController();
+
+  final TextEditingController alertProcessingPct = TextEditingController();
+  final TextEditingController alertPackagingPct = TextEditingController();
+  final TextEditingController alertEnvironmentPct = TextEditingController();
+
   final GlobalKey<ScaffoldState> scaffoldkey = GlobalKey<ScaffoldState>();
   // bool isNavBarHide = false;
   List<int> selectedIndices = [];
@@ -53,7 +113,8 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
   List<String> selectedNames = [];
   bool isAddselected = false;
   bool isAddButtonClicked = false;
-  String? stockId = "";
+  String? stockRecordId = "";
+  String? ingredientId = "";
   int currentMonth = DateTime.now().month;
   int currentYear = DateTime.now().year;
   @override
@@ -92,15 +153,541 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
   List stockList = [];
 
   getData() async {
+    // clear any old data
     storeRoomController.ingredientList.clear();
     storeRoomController.stockList.clear();
+
+    // re-fetch all ingredients in this category
     await storeRoomController.stroreRoomingredientsList(widget.categoryName!);
+
     if (storeRoomController.ingredientList.isNotEmpty) {
-      // stockId = storeRoomController.ingredientList[0].ingredientId;
-      await storeRoomController.stockListApi(
-          category: widget.categoryName!, item: stockId);
+      selectedIndex = 0;
+      final first = storeRoomController.ingredientList[0];
+      ingredientId = first.ingredientId;
+      selectedIngredient = first.ingredient!;
+
+      if (ingredientId != null) {
+        await storeRoomController.stockListApi(
+          category: widget.categoryName!,
+          item: ingredientId!,
+        );
+        // now grab the actual Stock record’s PK
+        if (storeRoomController.stockList.isNotEmpty) {
+          stockRecordId = storeRoomController.stockList.last.id.toString();
+        }
+      }
+
+      setState(() {});
     }
-    // print("${storeRoomController.ingredientList.toJson()} ==<<<<<<< stocklist");
+  }
+
+  Widget _buildMonthlySummaryCard() {
+    // 1. filter and sort this month’s records
+    final list = storeRoomController.stockList.where((s) {
+      final d = DateTime.parse(s.datecreated!);
+      return d.month == currentMonth && d.year == currentYear;
+    }).toList()
+      ..sort((a, b) => DateTime.parse(a.datecreated!)
+          .compareTo(DateTime.parse(b.datecreated!)));
+
+    if (list.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          "No stock data for this month",
+          style: TextStyle(fontFamily: "Lexand", color: borderColor),
+        ),
+      );
+    }
+
+    // 2. compute opening, totalIn, totalOut, closing
+    final opening = int.tryParse(list.first.stockCount ?? '0') ?? 0;
+    final totalIn = list.fold<int>(
+      0,
+      (sum, s) => sum + (int.tryParse(s.stockCount ?? '0') ?? 0),
+    );
+    final totalOut = list.fold<int>(
+      0,
+      (sum, s) => sum + (int.tryParse(s.consumption ?? '0') ?? 0),
+    );
+    final closing = opening + totalIn - totalOut;
+
+    // 3. average price = sum of all prices ÷ totalIn
+    final priceSum = list.fold<double>(
+      0.0,
+      (sum, s) => sum + (double.tryParse(s.pricePerUnit ?? '0') ?? 0.0),
+    );
+    final avgPrice = totalIn > 0 ? priceSum / totalIn : 0.0;
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ─── summary row ──────────────────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildStat("Opening", "$opening kg"),
+                  _buildStat("In", "$totalIn kg"),
+                  _buildStat("Out", "$totalOut kg"),
+                  _buildStat("Closing", "$closing kg"),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // ─── daily table ───────────────────────────────────────
+              Table(
+                border: TableBorder(
+                  horizontalInside:
+                      BorderSide(color: borderColor.withOpacity(0.3)),
+                  bottom: BorderSide(color: borderColor.withOpacity(0.3)),
+                ),
+                columnWidths: const {
+                  0: FlexColumnWidth(2),
+                  1: FlexColumnWidth(),
+                  2: FlexColumnWidth(),
+                  3: FlexColumnWidth(),
+                },
+                children: [
+                  // header
+                  TableRow(
+                    decoration:
+                        BoxDecoration(color: borderColor.withOpacity(0.1)),
+                    children: const [
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Text("Date",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: "Lexand",
+                              fontWeight: FontWeight.w600,
+                            )),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Text("Stock In",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: "Lexand",
+                              fontWeight: FontWeight.w600,
+                            )),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Text("Stock Out",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: "Lexand",
+                              fontWeight: FontWeight.w600,
+                            )),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Text("Price/kg",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontFamily: "Lexand",
+                              fontWeight: FontWeight.w600,
+                            )),
+                      ),
+                    ],
+                  ),
+                  // data rows
+                  for (var s in list)
+                    TableRow(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(
+                            DateFormat("d/M/yyyy")
+                                .format(DateTime.parse(s.datecreated!)),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontFamily: "Lexand"),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(
+                            s.stockCount ?? "0",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontFamily: "Lexand"),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(
+                            s.consumption ?? "0",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontFamily: "Lexand"),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(
+                            s.pricePerUnit ?? "0",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontFamily: "Lexand"),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // ─── footer with actual numbers ────────────────────────
+              Text(
+                "Opening + In − Out = Closing ⇒ "
+                "$opening + $totalIn − $totalOut = $closing",
+                style: const TextStyle(
+                  fontFamily: "Lexand",
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Total Stock In : $totalIn kg",
+                style: const TextStyle(
+                  fontFamily: "Lexand",
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Total Stock Out : $totalOut kg",
+                style: const TextStyle(
+                  fontFamily: "Lexand",
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Average Price /RM per kg: ${avgPrice.toStringAsFixed(2)}",
+                style: const TextStyle(
+                  fontFamily: "Lexand",
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// small helper to keep the stats row DRY
+  Widget _buildStat(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: "Lexand",
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            color: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontFamily: "Lexand",
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUsageWastageDashboard(
+    List<Stocks> list,
+    int totalOut,
+    double avgPrice,
+    double width,
+  ) {
+    // 1. compute actual usage & wastage
+    final actualUsage = list.fold<double>(
+      0.0,
+      (sum, s) => sum + (double.tryParse(s.consumption ?? '0') ?? 0.0),
+    );
+
+    final totalIn = list.fold<double>(
+      0.0,
+      (sum, s) => sum + (double.tryParse(s.stockCount ?? '0') ?? 0.0),
+    );
+
+    final wastage = (totalOut - actualUsage).clamp(0.0, totalOut.toDouble());
+
+    // 2. cost metrics
+    final totalCost = avgPrice * totalOut;
+    final actualUsagePrice = avgPrice * actualUsage;
+    final wastageCost = totalCost - actualUsagePrice;
+    final totalPrice = list.fold<double>(
+      0.0,
+      (sum, s) =>
+          sum +
+          (double.tryParse(s.pricePerUnit ?? '0') ?? 0.0) *
+              (double.tryParse(s.stockCount ?? '0') ?? 0.0),
+    );
+
+    // 3. breakdown percentages (you can replace these with your real fields)
+    final latest = list.last;
+    final processingPct = latest.processingPct;
+    final packagingPct = latest.packagingPct;
+    final environmentPct = latest.environmentPct;
+
+    // 3. compute wastage in kg = usage * (sum of breakdown %) / 100
+    final sumPct = processingPct + packagingPct + environmentPct;
+    final wastageKg = actualUsage * sumPct / 100.0;
+
+    // 4. compute “good” usage (what remains after wastage)
+    final usageKg = actualUsage - wastageKg;
+
+    // 5. percentages for your metric cards
+    final usagePct = totalOut > 0 ? (usageKg / totalOut) * 100.0 : 0.0;
+    final wastePct = totalOut > 0 ? (wastageKg / totalOut) * 100.0 : 0.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ─── Top metric cards ────────────────────────────
+        Row(
+          children: [
+            _MetricCard(
+              title: "Usage",
+              value: "${usageKg.toStringAsFixed(1)} kg",
+              percent: usagePct,
+              color: Colors.teal,
+              icon: Icons.trending_up,
+            ),
+            const SizedBox(width: 12),
+            _MetricCard(
+              title: "Wastage",
+              value: "${wastageKg.toStringAsFixed(1)} kg",
+              percent: wastePct,
+              color: Colors.deepOrange,
+              icon: Icons.delete_outline,
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // ─── Pie chart ───────────────────────────────────
+        Card(
+          elevation: 3,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: PieChart(
+              dataMap: {
+                "Usage": usageKg,
+                "Wastage": wastageKg,
+              },
+              chartRadius: width * 0.35,
+              initialAngleInDegree: 0,
+              chartType: ChartType.disc,
+              centerText: "${usagePct.toStringAsFixed(0)}%",
+              chartValuesOptions:
+                  const ChartValuesOptions(showChartValues: false),
+              legendOptions: LegendOptions(
+                showLegends: true,
+                legendPosition: LegendPosition.bottom,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // ─── Breakdown header + edit button ────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Wastage: ${wastageKg.toStringAsFixed(1)} kg",
+                style: const TextStyle(
+                  fontFamily: "Lexand",
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.deepOrange),
+                onPressed: () {
+                  if (stockRecordId != null && stockRecordId!.isNotEmpty) {
+                    _showEditItemModal(
+                      context,
+                      stockRecordId!,
+                      processingPct,
+                      packagingPct,
+                      environmentPct,
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // ─── Breakdown table ────────────────────────────
+        Card(
+          elevation: 1,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Table(
+            border: TableBorder.all(color: Colors.grey.shade300),
+            columnWidths: const {
+              0: FlexColumnWidth(),
+              1: FlexColumnWidth(),
+              2: FlexColumnWidth(),
+            },
+            children: [
+              TableRow(
+                decoration: BoxDecoration(color: Colors.grey.shade100),
+                children: const [
+                  Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Text("Processing / %",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontFamily: "Lexand", fontWeight: FontWeight.w600)),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Text("Packaging / %",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontFamily: "Lexand", fontWeight: FontWeight.w600)),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Text("Environment / %",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontFamily: "Lexand", fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
+              TableRow(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text("$processingPct",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontFamily: "Lexand")),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text("$packagingPct",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontFamily: "Lexand")),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text("$environmentPct",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontFamily: "Lexand")),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 32),
+
+        // ─── Detailed breakdown table ─────────────────────
+        Card(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 2,
+          child: DataTable(
+            headingRowColor:
+                MaterialStateColor.resolveWith((_) => Colors.grey.shade100),
+            columns: const [
+              DataColumn(label: Text("Metric")),
+              DataColumn(label: Text("Value")),
+            ],
+            rows: [
+              DataRow(cells: [
+                const DataCell(Text("Total Stock Out")),
+                DataCell(Text("${totalOut.toStringAsFixed(1)} kg")),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text("Actual Usage")),
+                DataCell(Text("${usageKg.toStringAsFixed(1)} kg")),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text("Wastage")),
+                DataCell(Text("${wastageKg.toStringAsFixed(1)} kg")),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text("Avg. Price")),
+                DataCell(Text("RM ${avgPrice.toStringAsFixed(2)}")),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text("Total Cost")),
+                DataCell(Text("RM ${totalCost.toStringAsFixed(2)}")),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text("Usage Cost")),
+                DataCell(Text("RM ${actualUsagePrice.toStringAsFixed(2)}")),
+              ]),
+              DataRow(cells: [
+                const DataCell(Text("Wastage Cost")),
+                DataCell(Text("RM ${wastageCost.toStringAsFixed(2)}")),
+              ]),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // ─── Formulas ──────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text("Formulas:",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text(
+                "Actual Usage Price = Usage × Avg. Price = "
+                "${usageKg.toStringAsFixed(1)} kg × RM ${avgPrice.toStringAsFixed(2)} "
+                "= RM ${actualUsagePrice.toStringAsFixed(2)}",
+              ),
+              Text(
+                "Total Cost = Avg. Price × Stock Out = "
+                "RM ${avgPrice.toStringAsFixed(2)} × ${totalOut.toStringAsFixed(1)} kg "
+                "= RM ${totalCost.toStringAsFixed(2)}",
+              ),
+              Text(
+                "Wastage Cost = Total Cost − Usage Cost = "
+                "RM ${totalCost.toStringAsFixed(2)} − RM ${actualUsagePrice.toStringAsFixed(2)} "
+                "= RM ${wastageCost.toStringAsFixed(2)}",
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   int selectedIndex = -1;
@@ -111,6 +698,35 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
   Widget build(BuildContext context) {
     var height = MediaQuery.of(context).size.height;
     var width = MediaQuery.of(context).size.width;
+
+    final filteredList = storeRoomController.stockList.where((s) {
+      final d = DateTime.parse(s.datecreated!);
+      return d.month == currentMonth && d.year == currentYear;
+    }).toList()
+      ..sort((a, b) => DateTime.parse(a.datecreated!)
+          .compareTo(DateTime.parse(b.datecreated!)));
+
+    // ── 1. recompute this month’s list & metrics ────────────────────────
+    final monthlyList = storeRoomController.stockList.where((s) {
+      final d = DateTime.parse(s.datecreated!);
+      return d.month == currentMonth && d.year == currentYear;
+    }).toList()
+      ..sort((a, b) => DateTime.parse(a.datecreated!)
+          .compareTo(DateTime.parse(b.datecreated!)));
+
+    final totalOut = monthlyList.fold<int>(
+      0,
+      (sum, s) => sum + (int.tryParse(s.consumption ?? '0') ?? 0),
+    );
+    final totalIn = monthlyList.fold<int>(
+      0,
+      (sum, s) => sum + (int.tryParse(s.bought ?? '0') ?? 0),
+    );
+    final priceSum = monthlyList.fold<double>(
+      0.0,
+      (sum, s) => sum + (double.tryParse(s.pricePerUnit ?? '0') ?? 0.0),
+    );
+    final avgPrice = totalIn > 0 ? priceSum / totalIn : 0.0;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -134,21 +750,27 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
                           IngredientModels data =
                               storeRoomController.ingredientList[index];
                           return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedIndex = index;
-                                stockId = data.ingredientId;
-                                storeRoomController.stockListApi(
+                            onTap: () async {
+                              selectedIndex = index;
+                              final data =
+                                  storeRoomController.ingredientList[index];
+                              ingredientId = data.ingredientId;
+                              selectedIngredient = data.ingredient!;
+                              scaffoldkey.currentState!.closeDrawer();
+
+                              if (ingredientId != null) {
+                                await storeRoomController.stockListApi(
                                   category: widget.categoryName!,
-                                  item: data.ingredientId,
+                                  item: ingredientId!,
                                 );
-                                scaffoldkey.currentState!.closeDrawer();
-                                selectedIngredient = data.ingredient!;
-                              });
-                              // print("${selectedIndex} =========>>>>>>>>>");
-                              // print("${data.toJson()} =========>>>>>>>>>");
-                              print(data.ingredientId);
-                              print(data.ingredient);
+                                if (storeRoomController.stockList.isNotEmpty) {
+                                  stockRecordId = storeRoomController
+                                      .stockList.last.id
+                                      .toString();
+                                }
+                              }
+
+                              setState(() {});
                             },
                             child: Padding(
                               padding: EdgeInsets.symmetric(
@@ -371,1132 +993,158 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
             ),
             Padding(
               padding: EdgeInsets.only(bottom: height * 0.04),
-              child: Column(
-                children: [
-                  !isAddButtonClicked
-                      ? Container()
-                      : SizedBox(
-                          width: width * 0.9,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(height: height * 0.01),
-                              Row(
-                                children: [
-                                  SizedBox(height: height * 0.02),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Text(
-                                      "Enter stockcount",
-                                      style: TextStyle(
-                                          color: Colors.grey[700],
-                                          fontFamily: "Lexand",
-                                          fontSize: height * 0.018,
-                                          fontWeight: FontWeight.w400),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: height * 0.01),
-                              Row(
-                                // crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(height: height * 0.02),
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: stockCountController,
-                                      keyboardType: TextInputType.number,
-                                      decoration: InputDecoration(
-                                        contentPadding:
-                                            const EdgeInsets.only(left: 16.0),
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                          borderSide:
-                                              const BorderSide(width: 1.5),
-                                        ),
-                                        disabledBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                          borderSide:
-                                              const BorderSide(width: 1.5),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                          borderSide: BorderSide(
-                                            color: borderColor.withOpacity(1.0),
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                          borderSide:
-                                              const BorderSide(width: 1.5),
-                                        ),
-                                      ),
-                                      onChanged: (value) {
-                                        setState(() {});
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: height * 0.01),
-                              Text(
-                                "Plan to buy",
-                                style: TextStyle(
-                                    color: Colors.grey[700],
-                                    fontFamily: "Lexand",
-                                    fontSize: height * 0.018,
-                                    fontWeight: FontWeight.w400),
-                              ),
-                              SizedBox(height: height * 0.01),
-                              SizedBox(
-                                // height: height * 0.07,
-                                child: TextFormField(
-                                  controller: planToBuyAdd,
-                                  keyboardType: TextInputType.number,
-                                  decoration: InputDecoration(
-                                    contentPadding:
-                                        const EdgeInsets.only(left: 16.0),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      borderSide: const BorderSide(width: 1.5),
-                                    ),
-                                    disabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      borderSide: const BorderSide(width: 1.5),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      borderSide: BorderSide(
-                                        color: borderColor.withOpacity(1.0),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      borderSide: const BorderSide(width: 1.5),
-                                    ),
-                                  ),
-                                  onChanged: (value) {
-                                    setState(() {});
-                                  },
-                                ),
-                              ),
-                              SizedBox(height: height * 0.01),
-                              Text(
-                                "Date",
-                                style: TextStyle(
-                                    color: Colors.grey[700],
-                                    fontFamily: "Lexand",
-                                    fontSize: height * 0.018,
-                                    fontWeight: FontWeight.w400),
-                              ),
-                              SizedBox(height: height * 0.01),
-                              SizedBox(
-                                height: height * 0.07,
-                                child: TextFormField(
-                                  controller: stackAddingDate,
-                                  readOnly: true,
-                                  decoration: InputDecoration(
-                                    suffixIcon: InkWell(
-                                      onTap: () {
-                                        showDatePicker(
-                                          context: context,
-                                          initialDate: DateTime.now(),
-                                          firstDate: DateTime(1910),
-                                          lastDate: DateTime(2025),
-                                          builder: (BuildContext context,
-                                              Widget? child) {
-                                            return Theme(
-                                              data: Theme.of(context).copyWith(
-                                                colorScheme: ColorScheme.light(
-                                                  primary: primaryColor,
-                                                  onPrimary: Colors.white,
-                                                  onSurface: Colors.black,
-                                                ),
-                                              ),
-                                              child: child!,
-                                            );
-                                          },
-                                        ).then((value) {
-                                          if (value != null) {
-                                            stackAddingDate.text = value
-                                                .toString()
-                                                .split(" ")
-                                                .first;
-                                          }
-                                        });
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Image.asset(
-                                          "assets/calendar.png",
-                                          height: height * 0.02,
-                                        ),
-                                      ),
-                                    ),
-                                    contentPadding:
-                                        const EdgeInsets.only(left: 16.0),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      borderSide: const BorderSide(width: 1.5),
-                                    ),
-                                    disabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      borderSide: const BorderSide(width: 1.5),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      borderSide: BorderSide(
-                                        color: borderColor.withOpacity(1.0),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      borderSide: const BorderSide(width: 1.5),
-                                    ),
-                                  ),
-                                  onChanged: (value) {
-                                    setState(() {});
-                                  },
-                                ),
-                              ),
-                              SizedBox(height: height * 0.02),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: InkWell(
-                                      onTap: () {
-                                        isAddButtonClicked = false;
-                                        setState(() {});
-                                      },
-                                      child: Padding(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: width * 0.02),
-                                        child: Container(
-                                          height: height * 0.04,
-                                          width: width,
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Colors.white.withOpacity(1.0),
-                                            border: Border.all(
-                                                width: width * 0.001,
-                                                color: buttonColor),
-                                            borderRadius:
-                                                BorderRadius.circular(15.0),
-                                          ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Center(
-                                              child: Text(
-                                                "Cancel",
-                                                style: TextStyle(
-                                                    color: buttonColor,
-                                                    fontFamily: "Lexand",
-                                                    fontSize: height * 0.011,
-                                                    fontWeight:
-                                                        FontWeight.w700),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: InkWell(
-                                      onTap: () async {
-                                        var result =
-                                            await storeRoomController.addStock(
-                                                planToBuy: planToBuyAdd.text,
-                                                stockCount:
-                                                    stockCountController.text,
-                                                date: stackAddingDate.text,
-                                                category: widget.categoryName,
-                                                item: stockId);
-
-                                        if (result != null) {
-                                          planToBuyAdd.clear();
-                                          stockCountController.clear();
-                                          stackAddingDate.clear();
-                                          isAddButtonClicked = false;
-                                          await storeRoomController
-                                              .stockListApi(
-                                                  category:
-                                                      widget.categoryName!,
-                                                  item: stockId);
-                                          setState(() {});
-                                        }
-                                      },
-                                      child: Padding(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: width * 0.02),
-                                        child: Container(
-                                          height: height * 0.04,
-                                          width: width,
-                                          decoration: BoxDecoration(
-                                            color: buttonColor.withOpacity(1.0),
-                                            borderRadius:
-                                                BorderRadius.circular(15.0),
-                                          ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Center(
-                                              child: Text(
-                                                "Save",
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontFamily: "Lexand",
-                                                    fontSize: height * 0.011,
-                                                    fontWeight:
-                                                        FontWeight.w700),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                ],
-                              )
-                            ],
-                          ),
-                        ),
-                ],
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                transitionBuilder: (child, anim) => SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, -1), // ↑ off-screen above
+                    end: Offset.zero,
+                  ).animate(anim),
+                  child: child,
+                ),
+                child: isAddButtonClicked
+                    ? _buildUsageWastageDashboard(
+                        monthlyList, totalOut, avgPrice, width)
+                    : const SizedBox.shrink(),
               ),
             ),
-            (stockId!.isNotEmpty)
-                ? SizedBox(
-                    height: height * 0.7,
-                    width: width,
-                    child: Obx(() => ListView.builder(
-                          // shrinkWrap: true,
-                          scrollDirection: Axis.horizontal,
-                          itemCount: storeRoomController.stockList.length,
-                          itemBuilder: (context, i) {
-                            Stocks data = storeRoomController.stockList[i];
-                            DateTime tempDate = new DateFormat("yyyy-MM-dd")
-                                .parse(data.datecreated!);
-                            if (tempDate.month ==
-                                    (currentMonth > 10
-                                        ? int.parse("0$currentMonth")
-                                        : currentMonth) &&
-                                tempDate.year == currentYear) {
-                              print(tempDate.month);
-                              print((currentMonth > 10
-                                  ? int.parse("0$currentMonth")
-                                  : currentMonth));
-                              print(currentYear);
-                              print(tempDate.year);
-                              print(selectedStockId);
-                              print(stockId);
-                              return
-                                  // (selectedStockId != stockId || data == '')
-                                  //     ? Container(
-                                  //         width: width,
-                                  //         // color: primaryColor,
-                                  //         child: Column(
-                                  //           mainAxisAlignment:
-                                  //               MainAxisAlignment.center,
-                                  //           children: [
-                                  //             Row(
-                                  //               mainAxisAlignment:
-                                  //                   MainAxisAlignment.center,
-                                  //               children: [
-                                  //                 Center(
-                                  //                   child: Text(
-                                  //                     "Add Stock",
-                                  //                     style: TextStyle(
-                                  //                         fontSize: 18,
-                                  //                         fontWeight:
-                                  //                             FontWeight.bold,
-                                  //                         color: borderColor),
-                                  //                   ),
-                                  //                 )
-                                  //               ],
-                                  //             )
-                                  //           ],
-                                  //         ),
-                                  //       )
-                                  //     :
-                                  Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Container(
-                                  // height: height * 0.1,
-                                  width: width / 1.3,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                        width: width * 0.001,
-                                        color: primaryColor),
-                                    borderRadius: BorderRadius.circular(30.0),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Padding(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: width * 0.04,
-                                            vertical: height * 0.02),
-                                        child: Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    formatDate(
-                                                        data.datecreated),
-                                                    style: TextStyle(
-                                                      fontFamily: "Lexand",
-                                                      fontSize: height * 0.022,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                      height: height * 0.04),
-                                                  Text(
-                                                    "Opening Stock",
-                                                    style: TextStyle(
-                                                        fontFamily: "Lexand",
-                                                        fontSize:
-                                                            height * 0.017,
-                                                        fontWeight:
-                                                            FontWeight.w300,
-                                                        color:
-                                                            Colors.grey[600]),
-                                                  ),
-                                                  Text(
-                                                    "${data.stockCount} ${data.unit}",
-                                                    style: TextStyle(
-                                                      fontFamily: "Lexand",
-                                                      fontSize: height * 0.022,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                      height: height * 0.02),
-                                                  Text(
-                                                    "Plan to buy",
-                                                    style: TextStyle(
-                                                        fontFamily: "Lexand",
-                                                        fontSize:
-                                                            height * 0.017,
-                                                        fontWeight:
-                                                            FontWeight.w300,
-                                                        color:
-                                                            Colors.grey[600]),
-                                                  ),
-                                                  Text(
-                                                    "${data.planToBuy} ${data.unit}",
-                                                    style: TextStyle(
-                                                      fontFamily: "Lexand",
-                                                      fontSize: height * 0.022,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                      height: height * 0.02),
-                                                  Row(
-                                                    children: [
-                                                      Text(
-                                                        "Bought",
-                                                        style: TextStyle(
-                                                            fontFamily:
-                                                                "Lexand",
-                                                            fontSize:
-                                                                height * 0.017,
-                                                            fontWeight:
-                                                                FontWeight.w300,
-                                                            color: Colors
-                                                                .grey[600]),
-                                                      ),
-                                                      // Icon(
-                                                      //   Icons.arrow_drop_up,
-                                                      //   size: height * 0.03,
-                                                      //   color: Colors.green,
-                                                      // ),
-                                                      // Text(
-                                                      //   "20 %",
-                                                      //   style: TextStyle(
-                                                      //       fontFamily: "Lexand",
-                                                      //       fontSize: height * 0.011,
-                                                      //       fontWeight: FontWeight.w300,
-                                                      //       color: Colors.green),
-                                                      // ),
-                                                    ],
-                                                  ),
-                                                  // SizedBox(height: height * 0.02),
-                                                  Row(
-                                                    children: [
-                                                      Text(
-                                                        (data.bought != null)
-                                                            ? "${data.bought} ${data.unit}"
-                                                            : "Not yet entered",
-                                                        style: TextStyle(
-                                                          fontFamily: "Lexand",
-                                                          fontSize:
-                                                              height * 0.022,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  SizedBox(
-                                                      height: height * 0.02),
-                                                  Row(
-                                                    children: [
-                                                      Text(
-                                                        "Paid per unit",
-                                                        style: TextStyle(
-                                                            fontFamily:
-                                                                "Lexand",
-                                                            fontSize:
-                                                                height * 0.017,
-                                                            fontWeight:
-                                                                FontWeight.w300,
-                                                            color: Colors
-                                                                .grey[600]),
-                                                      ),
-                                                      // Icon(
-                                                      //   Icons.arrow_drop_down,
-                                                      //   size: height * 0.03,
-                                                      //   color: Colors.red,
-                                                      // ),
-                                                      // Text(
-                                                      //   "20 %",
-                                                      //   style: TextStyle(
-                                                      //       fontFamily: "Lexand",
-                                                      //       fontSize: height * 0.011,
-                                                      //       fontWeight: FontWeight.w300,
-                                                      //       color: Colors.red),
-                                                      // ),
-                                                    ],
-                                                  ),
-                                                  // SizedBox(height: height * 0.02),
-                                                  Text(
-                                                    (data.bought != null)
-                                                        ? "${data.pricePerUnit} ${data.unit}"
-                                                        : "Not yet entered",
-                                                    style: TextStyle(
-                                                      fontFamily: "Lexand",
-                                                      fontSize: height * 0.022,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                      height: height * 0.02),
-                                                  Text(
-                                                    "Consumption",
-                                                    style: TextStyle(
-                                                        fontFamily: "Lexand",
-                                                        fontSize:
-                                                            height * 0.017,
-                                                        fontWeight:
-                                                            FontWeight.w300,
-                                                        color:
-                                                            Colors.grey[600]),
-                                                  ),
-                                                  SizedBox(
-                                                    width: width * 0.6,
-                                                    child: Text(
-                                                      (data.consumption != null)
-                                                          ? "${data.consumption} ${data.unit}"
-                                                          : "Calculated upon addition of the next stock card.",
-                                                      // overflow: TextOverflow.ellipsis,
-                                                      // maxLines: 1,
-                                                      style: TextStyle(
-                                                        fontFamily: "Lexand",
-                                                        fontSize:
-                                                            height * 0.022,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                      height: height * 0.02),
-                                                  Text(
-                                                    "Closing stock",
-                                                    style: TextStyle(
-                                                        fontFamily: "Lexand",
-                                                        fontSize:
-                                                            height * 0.017,
-                                                        fontWeight:
-                                                            FontWeight.w300,
-                                                        color:
-                                                            Colors.grey[600]),
-                                                  ),
-                                                  SizedBox(
-                                                    width: width * 0.6,
-                                                    child: Text(
-                                                      (data.closingStock !=
-                                                              null)
-                                                          ? "${data.closingStock} ${data.unit}"
-                                                          : "Calculated upon addition of the next stock card.",
-                                                      // overflow: TextOverflow.ellipsis,
-                                                      // maxLines: 1,
-                                                      style: TextStyle(
-                                                        fontFamily: "Lexand",
-                                                        fontSize:
-                                                            height * 0.022,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Column(
-                                              children: [
-                                                IconButton(
-                                                  onPressed: () async {
-                                                    // print(data.toJson());
-                                                    _showEditItemModal(
-                                                        context,
-                                                        data!.id.toString(),
-                                                        data.stockCount ?? "",
-                                                        data.planToBuy ?? "",
-                                                        data.bought ?? "",
-                                                        data.pricePerUnit ?? "",
-                                                        stockId.toString());
-                                                  },
-                                                  icon: const Icon(Icons.edit),
-                                                ),
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Get.dialog(
-                                                      Column(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .symmetric(
-                                                                    horizontal:
-                                                                        40),
-                                                            child: Container(
-                                                              decoration:
-                                                                  const BoxDecoration(
-                                                                color: Colors
-                                                                    .white,
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .all(
-                                                                  Radius
-                                                                      .circular(
-                                                                          20),
-                                                                ),
-                                                              ),
-                                                              child: Padding(
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                        .all(
-                                                                        20.0),
-                                                                child: Material(
-                                                                  child: Column(
-                                                                    children: [
-                                                                      const Text(
-                                                                        "Delete Item",
-                                                                        textAlign:
-                                                                            TextAlign.center,
-                                                                        style:
-                                                                            TextStyle(
-                                                                          fontWeight:
-                                                                              FontWeight.bold,
-                                                                          fontSize:
-                                                                              20,
-                                                                          color:
-                                                                              Colors.black,
-                                                                        ),
-                                                                      ),
-                                                                      SizedBox(
-                                                                          height:
-                                                                              height * 0.02),
-                                                                      const Text(
-                                                                        "Are You Sure,Delete This Item?",
-                                                                        textAlign:
-                                                                            TextAlign.center,
-                                                                        style:
-                                                                            TextStyle(
-                                                                          fontWeight:
-                                                                              FontWeight.bold,
-                                                                          fontSize:
-                                                                              16,
-                                                                        ),
-                                                                      ),
-                                                                      SizedBox(
-                                                                          height:
-                                                                              height * 0.04),
-                                                                      Row(
-                                                                        children: [
-                                                                          Expanded(
-                                                                            child:
-                                                                                InkWell(
-                                                                              onTap: () {
-                                                                                Get.back();
-                                                                              },
-                                                                              child: Padding(
-                                                                                padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                                                                                child: Container(
-                                                                                  height: height * 0.04,
-                                                                                  width: width,
-                                                                                  decoration: BoxDecoration(
-                                                                                    color: Colors.white.withOpacity(1.0),
-                                                                                    border: Border.all(width: width * 0.001, color: buttonColor),
-                                                                                    borderRadius: BorderRadius.circular(15.0),
-                                                                                  ),
-                                                                                  child: Padding(
-                                                                                    padding: const EdgeInsets.all(8.0),
-                                                                                    child: Center(
-                                                                                      child: Text(
-                                                                                        "No",
-                                                                                        style: TextStyle(color: buttonColor, fontFamily: "Lexand", fontSize: height * 0.015, fontWeight: FontWeight.w700),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                          const SizedBox(
-                                                                              width: 10),
-                                                                          Expanded(
-                                                                            child:
-                                                                                InkWell(
-                                                                              onTap: () async {
-                                                                                var result = await storeRoomController.deleteStock(stockId: data.id);
-                                                                                if (result == true) {
-                                                                                  storeRoomController.stockListApi(category: widget.categoryName!, item: stockId);
-
-                                                                                  Get.back();
-                                                                                }
-                                                                                print("${result}--->>>");
-                                                                              },
-                                                                              child: Padding(
-                                                                                padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                                                                                child: Container(
-                                                                                  height: height * 0.04,
-                                                                                  width: width,
-                                                                                  decoration: BoxDecoration(
-                                                                                    color: Colors.black.withOpacity(1.0),
-                                                                                    border: Border.all(width: width * 0.001, color: buttonColor),
-                                                                                    borderRadius: BorderRadius.circular(15.0),
-                                                                                  ),
-                                                                                  child: Padding(
-                                                                                    padding: const EdgeInsets.all(8.0),
-                                                                                    child: Center(
-                                                                                      child: Text(
-                                                                                        "Yes",
-                                                                                        style: TextStyle(color: Colors.white, fontFamily: "Lexand", fontSize: height * 0.015, fontWeight: FontWeight.w700),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    );
-                                                  },
-                                                  icon:
-                                                      const Icon(Icons.delete),
-                                                ),
-                                                // InkWell(
-                                                //   onTap: () {},
-                                                //   child: Padding(
-                                                //     padding: const EdgeInsets.all(8.0),
-                                                //     child: Icon(
-                                                //       Icons.edit,
-                                                //       size: height * 0.02,
-                                                //     ),
-                                                //   ),
-                                                // ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            } else {
-                              return Container();
-                            }
-                          },
-                        )),
-                  )
-                : Container(
-                    child: Column(
-                      children: [
-                        Text(
-                          "Select Ingredient",
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: borderColor),
-                        ),
-                      ],
+            (ingredientId != null && ingredientId!.isNotEmpty)
+                ? Obx(() => _buildMonthlySummaryCard())
+                : Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      "Select Ingredient",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: borderColor,
+                      ),
                     ),
-                  )
+                  ),
           ],
         ),
       ),
     );
   }
 
-  void _showEditItemModal(BuildContext context, String id, String stockCount,
-      String planToBuy, String bought, String pricePerUnit, String itemId) {
-    var size = MediaQuery.of(context).size;
-    var height = size.height;
-    var width = size.width;
-    alertStackCount.text = stockCount;
-    alertPlanToBuy.text = planToBuy;
-    alertBoughtCount.text = bought;
-    alertUnitPrice.text = pricePerUnit;
+  void _showEditItemModal(
+    BuildContext context,
+    String stockId,
+    int processingPct,
+    int packagingPct,
+    int environmentPct,
+  ) {
+    final h = MediaQuery.of(context).size.height;
+
+    // Prefill the controllers:
+    alertProcessingPct.text = processingPct.toString();
+    alertPackagingPct.text = packagingPct.toString();
+    alertEnvironmentPct.text = environmentPct.toString();
 
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          elevation: 1,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: height * 0.02),
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: height * 0.05,
-                      child: TextFormField(
-                        controller: alertStackCount,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.only(left: 16.0),
-                          floatingLabelStyle: const TextStyle(
-                            fontFamily: "Lexand",
-                            fontWeight: FontWeight.w400,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15.0),
-                            borderSide: const BorderSide(width: 1.5),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: const BorderSide(width: 1.5),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: BorderSide(
-                              color: borderColor.withOpacity(1.0),
-                              width: 1.5,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: const BorderSide(width: 1.5),
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {});
-                        },
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: width * 0.02),
-                  Expanded(
-                    child: SizedBox(
-                      height: height * 0.05,
-                      child: TextFormField(
-                        controller: alertPlanToBuy,
-                        decoration: InputDecoration(
-                          // suffixIcon: InkWell(
-                          //   onTap: () {
-
-                          //   },
-                          //   child: Padding(
-                          //     padding:
-                          //         const EdgeInsets.all(8.0),
-                          //     child: Image.asset(
-                          //       "assets/calendar.png",
-                          //       height: height * 0.02,
-                          //     ),
-                          //   ),
-                          // ),
-                          contentPadding: const EdgeInsets.only(left: 16.0),
-
-                          floatingLabelStyle: const TextStyle(
-                            fontFamily: "Lexand",
-                            fontWeight: FontWeight.w400,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: const BorderSide(width: 1.5),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: const BorderSide(width: 1.5),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: BorderSide(
-                              color: borderColor.withOpacity(1.0),
-                              width: 1.5,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: const BorderSide(width: 1.5),
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {});
-                        },
-                      ),
-                    ),
-                  ),
-                ],
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Edit Wastage Breakdown",
+              style: TextStyle(
+                fontFamily: "Lexand",
+                fontSize: h * 0.02,
+                fontWeight: FontWeight.bold,
               ),
-              SizedBox(height: height * 0.02),
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: height * 0.05,
-                      child: TextFormField(
-                        controller: alertBoughtCount,
-                        decoration: InputDecoration(
-                          // suffixIcon: InkWell(
-                          //   onTap: () {
+            ),
+            const SizedBox(height: 16),
 
-                          //   },
-                          //   child: Padding(
-                          //     padding:
-                          //         const EdgeInsets.all(8.0),
-                          //     child: Image.asset(
-                          //       "assets/calendar.png",
-                          //       height: height * 0.02,
-                          //     ),
-                          //   ),
-                          // ),
-                          contentPadding: const EdgeInsets.only(left: 16.0),
-                          hintText: "Bought quantity?",
-                          hintStyle: TextStyle(
-                            fontFamily: "Lexand",
-                            fontSize: height * 0.015,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          floatingLabelStyle: const TextStyle(
-                            fontFamily: "Lexand",
-                            fontWeight: FontWeight.w400,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: const BorderSide(width: 1.5),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: const BorderSide(width: 1.5),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: BorderSide(
-                              color: borderColor.withOpacity(1.0),
-                              width: 1.5,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: const BorderSide(width: 1.5),
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {});
-                        },
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: width * 0.02),
-                  Expanded(
-                    child: SizedBox(
-                      height: height * 0.05,
-                      child: TextFormField(
-                        controller: alertUnitPrice,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.only(left: 16.0),
-                          hintText: "Unit price?",
-                          hintStyle: TextStyle(
-                            fontFamily: "Lexand",
-                            fontSize: height * 0.015,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          floatingLabelStyle: const TextStyle(
-                            fontFamily: "Lexand",
-                            fontWeight: FontWeight.w400,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: const BorderSide(width: 1.5),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: const BorderSide(width: 1.5),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: BorderSide(
-                              color: borderColor.withOpacity(1.0),
-                              width: 1.5,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: const BorderSide(width: 1.5),
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {});
-                        },
-                      ),
-                    ),
-                  ),
-                ],
+            // Processing %
+            TextFormField(
+              controller: alertProcessingPct,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "Processing %",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              SizedBox(height: height * 0.02),
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        Get.back();
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                        child: Container(
-                          height: height * 0.04,
-                          width: width,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(1.0),
-                            border: Border.all(
-                                width: width * 0.001, color: buttonColor),
-                            borderRadius: BorderRadius.circular(15.0),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Center(
-                              child: Text(
-                                "Cancel",
-                                style: TextStyle(
-                                    color: buttonColor,
-                                    fontFamily: "Lexand",
-                                    fontSize: height * 0.015,
-                                    fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+            ),
+            const SizedBox(height: 12),
+
+            // Packaging %
+            TextFormField(
+              controller: alertPackagingPct,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "Packaging %",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Environment %
+            TextFormField(
+              controller: alertEnvironmentPct,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "Environment %",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text("Cancel"),
                   ),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () async {
-                        var result = await storeRoomController.editStock(
-                            bought: alertBoughtCount.text,
-                            planToBuy: alertPlanToBuy.text,
-                            pricePerUnit: alertUnitPrice.text,
-                            stockCount: alertStackCount.text,
-                            stockId: id);
-                        print("${result} ======>");
-                        if (result != null) {
-                          AnimatedSnackBar.material(
-                            'Successfully Changed',
-                            type: AnimatedSnackBarType.success,
-                            duration: const Duration(seconds: 2),
-                            mobilePositionSettings:
-                                const MobilePositionSettings(
-                              topOnAppearance: 100,
-                              topOnDissapear: 50,
-                              // bottomOnAppearance: 100,
-                              // bottomOnDissapear: 50,
-                              // left: 20,
-                              right: 10,
-                            ),
-                            mobileSnackBarPosition: MobileSnackBarPosition.top,
-                            desktopSnackBarPosition:
-                                DesktopSnackBarPosition.bottomLeft,
-                          ).show(context);
-                          // Refresh the page or update the state
-                          storeRoomController.stockListApi(
-                            category: widget.categoryName!,
-                            item: itemId,
-                          );
-                          setState(() {});
-                          Get.back();
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final res = await storeRoomController.editStock(
+                        stockId: stockId,
+                        processingPct: int.parse(alertProcessingPct.text),
+                        packagingPct: int.parse(alertPackagingPct.text),
+                        environmentPct: int.parse(alertEnvironmentPct.text),
+                      );
+                      if (res != null) {
+                        // show success
+                        AnimatedSnackBar.material(
+                          'Breakdown updated',
+                          type: AnimatedSnackBarType.success,
+                        ).show(context);
+
+                        // re-fetch by ingredientId (NOT stockRecordId!)
+                        await storeRoomController.stockListApi(
+                          category: widget.categoryName!,
+                          item: ingredientId!,
+                        );
+                        // grab the new latest
+                        if (storeRoomController.stockList.isNotEmpty) {
+                          stockRecordId =
+                              storeRoomController.stockList.last.id.toString();
                         }
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                        child: Container(
-                          height: height * 0.04,
-                          width: width,
-                          decoration: BoxDecoration(
-                            color: buttonColor.withOpacity(1.0),
-                            borderRadius: BorderRadius.circular(15.0),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Center(
-                              child: Text(
-                                "Save",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontFamily: "Lexand",
-                                    fontSize: height * 0.015,
-                                    fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+
+                        setState(() {});
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: const Text("Save"),
                   ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
