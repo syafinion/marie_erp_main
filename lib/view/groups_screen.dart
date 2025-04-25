@@ -19,7 +19,7 @@ class GroupsScreen extends StatefulWidget {
 class _GroupsScreenState extends State<GroupsScreen> {
   CommonController commonController = Get.find();
   GroupsController groupsController = Get.put(GroupsController());
-   
+
   late List<bool> isCheckedList; // Initialize in initState
   final storage = const FlutterSecureStorage();
   var restaurantName = "";
@@ -54,7 +54,13 @@ class _GroupsScreenState extends State<GroupsScreen> {
   @override
   void initState() {
     super.initState();
-    getCommonData();
+    storage.read(key: 'userName').then((name) {
+      setState(() {
+        restaurantName = name ?? '';
+        firstLetter =
+            restaurantName.isNotEmpty ? restaurantName[0].toUpperCase() : '';
+      });
+    });
     // Initialize isCheckedList based on groups length
     isCheckedList = List.generate(groups.length, (index) => false);
     loadCheckboxState(); // Load initial checkbox state
@@ -66,7 +72,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
     //   String key = 'isChecked_${commonController.ingredientsList[i].name}';
     //   String? value = await storage.read(key: key);
     //   commonController.ingredientsList[i].isChecked = (value == 'true')?true:false;
-      
+
     // }
     // for (int i = 0; i < groups.length; i++) {
     //   String key = 'isChecked_${groups[i].name}';
@@ -128,8 +134,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
         leading: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Image.asset(
-                  "assets/mrp2.png",
-                ),
+            "assets/mrp2.png",
+          ),
         ),
         actions: [
           Padding(
@@ -158,7 +164,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       SizedBox(
                         width: width * 0.25,
                         child: Text(
-                          restaurantName.toString(),
+                          restaurantName,
                           style: TextStyle(fontSize: height * 0.015),
                         ),
                       ),
@@ -202,7 +208,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                   InkWell(
                     onTap: () async {
                       print("${selectedItems} --> selected");
-                   
+
                       await Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
@@ -226,74 +232,79 @@ class _GroupsScreenState extends State<GroupsScreen> {
               SizedBox(height: height * 0.02),
               Container(
                 height: height * 0.75,
-                child:Obx(() =>  GridView.builder(
-                  shrinkWrap: true,
-                  itemCount: commonController.ingredientsList.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            width: 1.5,
-                            color: isCheckedList[index]
-                                ? primaryColor.withOpacity(1.0)
-                                : borderColor.withOpacity(1.0),
-                          ),
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20.0),
-                        ),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
+                child: Obx(() => GridView.builder(
+                      shrinkWrap: true,
+                      itemCount: commonController.ingredientsList.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                width: 1.5,
+                                color: isCheckedList[index]
+                                    ? primaryColor.withOpacity(1.0)
+                                    : borderColor.withOpacity(1.0),
+                              ),
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                            child: Column(
                               children: [
-                                Checkbox(
-                                  side: BorderSide(width: width * 0.001),
-                                  activeColor: Colors.green,
-                                  focusColor: Colors.green,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(50.0),
-                                  ),
-                                  value: commonController.ingredientsList[index].isChecked,
-                                  onChanged: (value) async {
-                                    commonController.ingredientsList[index].isChecked = value ?? false;
-                                    
-                                    setState(() {
-                                      isCheckedList[index] = value ?? false;
-                                    });
-                                    await saveCheckboxState(
-                                        index, value ?? false);
-                                  },
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Checkbox(
+                                      side: BorderSide(width: width * 0.001),
+                                      activeColor: Colors.green,
+                                      focusColor: Colors.green,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(50.0),
+                                      ),
+                                      value: commonController
+                                          .ingredientsList[index].isChecked,
+                                      onChanged: (value) async {
+                                        commonController.ingredientsList[index]
+                                            .isChecked = value ?? false;
+
+                                        setState(() {
+                                          isCheckedList[index] = value ?? false;
+                                        });
+                                        await saveCheckboxState(
+                                            index, value ?? false);
+                                      },
+                                    ),
+                                  ],
                                 ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: width * 0.03),
+                                  child: Image.asset(
+                                    commonController
+                                        .ingredientsList[index].imageName!,
+                                    height: height * 0.1,
+                                  ),
+                                ),
+                                Text(
+                                  commonController.ingredientsList[index].name!,
+                                  style: TextStyle(
+                                    fontFamily: "Lexand",
+                                    fontSize: height * 0.018,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                )
                               ],
                             ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: width * 0.03),
-                              child: Image.asset(
-                                commonController.ingredientsList[index].imageName!,
-                                height: height * 0.1,
-                              ),
-                            ),
-                            Text(
-                              commonController.ingredientsList[index].name!,
-                              style: TextStyle(
-                                fontFamily: "Lexand",
-                                fontSize: height * 0.018,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            )
-                          ],
-                        ),
+                          ),
+                        );
+                      },
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 3 / 3.5,
                       ),
-                    );
-                  },
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 3 / 3.5,
-                  ),
-                )),
+                    )),
               ),
             ],
           ),
@@ -311,10 +322,11 @@ class _GroupsScreenState extends State<GroupsScreen> {
     Get.offAll(LoginScreen());
   }
 }
-class Item {
-   String? name;
-   String? imageName;
-   bool? isChecked;
 
-  Item({this.name, this.imageName,this.isChecked});
+class Item {
+  String? name;
+  String? imageName;
+  bool? isChecked;
+
+  Item({this.name, this.imageName, this.isChecked});
 }

@@ -18,29 +18,26 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final storage = const FlutterSecureStorage();
 
-  isLoggedIn() async {
-    var token = await storage.read(key: "token");
+  Future<void> isLoggedIn() async {
+    final token = await storage.read(key: "token");
     if (token != null) {
-      // Token exists, proceed to the main screen
-      await Navigator.pushReplacement(
+      // Already logged in → go to MainScreen
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const MainScreen(
+          builder: (_) => const MainScreen(
             index: 0,
             selectedItems: [],
           ),
         ),
       );
-    } else {
-      // No token found, remain on login screen
-      print("No valid session found. Please log in.");
     }
   }
 
   @override
   void initState() {
     // TODO: implement initState
-    // isLoggedIn();
+    isLoggedIn();
     super.initState();
   }
 

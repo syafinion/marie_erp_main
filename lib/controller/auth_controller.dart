@@ -10,22 +10,19 @@ import '../constants/LoadingWidget.dart';
 class AuthController extends GetxController {
   final storage = const FlutterSecureStorage();
 
-  Future<Map<String, dynamic>?> authUser(
-      {String? email, String? password}) async {
+  Future<Map<String, dynamic>?> authUser({
+    required String email,
+    required String password,
+  }) async {
     try {
-      // Test reachability
-      final connectivityTest = await http.get(Uri.parse(endPoint['login']!));
-      if (connectivityTest.statusCode != 404) {
-        print("API is reachable");
+      // connectivity test
+      final ping = await http.get(Uri.parse(endPoint['login']!));
+      if (ping.statusCode != 404) {
+        print("API reachable");
       } else {
         print("API not reachable");
         return null;
       }
-
-      print("-----------------------------");
-      print("Request URL: ${endPoint['login']}");
-      var body = json.encode({"email": email, "password": password});
-      print("Request Body: $body");
 
       final response = await http.post(
         Uri.parse(endPoint['login']!),
@@ -33,25 +30,28 @@ class AuthController extends GetxController {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        body: body,
+        body: json.encode({'email': email, 'password': password}),
       );
 
-      print("Response Code: ${response.statusCode}");
-      print("Response Body: ${response.body}");
-
+      print("Login response: ${response.statusCode} ${response.body}");
       if (response.statusCode == 200) {
-        var result = jsonDecode(response.body);
-        // Convert `userId` to a string before storing
+        final result = jsonDecode(response.body) as Map<String, dynamic>;
+
+        // store token, userId and userName
         await storage.write(key: "token", value: result['token']);
         await storage.write(key: "userId", value: result['userId'].toString());
-        return result; // Return the parsed JSON
+
+        // if your backend now returns user.name in the JSON:
+        final name = (result['user']?['name'] ?? '') as String;
+        await storage.write(key: "userName", value: name);
+
+        return result;
       } else {
-        // Handle non-200 responses
         print("Login failed: ${response.body}");
         return null;
       }
-    } catch (error) {
-      print("Error during login: $error");
+    } catch (err) {
+      print("Error during login: $err");
       return null;
     }
   }

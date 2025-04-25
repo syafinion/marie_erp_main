@@ -99,7 +99,8 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
   final TextEditingController alertProcessingPct = TextEditingController();
   final TextEditingController alertPackagingPct = TextEditingController();
   final TextEditingController alertEnvironmentPct = TextEditingController();
-
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
   final GlobalKey<ScaffoldState> scaffoldkey = GlobalKey<ScaffoldState>();
   // bool isNavBarHide = false;
   List<int> selectedIndices = [];
@@ -117,6 +118,13 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
   String? ingredientId = "";
   int currentMonth = DateTime.now().month;
   int currentYear = DateTime.now().year;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     Future.delayed(Duration.zero).then((value) => getData());
@@ -293,7 +301,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
                       ),
                       Padding(
                         padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Text("Price",
+                        child: Text("Total Price",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontFamily: "Lexand",
@@ -334,7 +342,11 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           child: Text(
-                            s.pricePerUnit ?? "0",
+                            // parse safely, multiply, then format to 2 decimal places
+                            ((int.tryParse(s.stockCount ?? '0') ?? 0) *
+                                    (double.tryParse(s.pricePerUnit ?? '0') ??
+                                        0.0))
+                                .toStringAsFixed(2),
                             textAlign: TextAlign.center,
                             style: const TextStyle(fontFamily: "Lexand"),
                           ),
@@ -714,84 +726,133 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       key: scaffoldkey,
-      drawer: Align(
-        alignment: Alignment.bottomLeft,
-        child: Container(
-          // margin: EdgeInsets.only(top: height * 0.06, bottom: height * 0.005),
-          height: height * 0.82,
-          width: width * 0.45,
-          color: Colors.white,
-          child: SingleChildScrollView(
+      drawer: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        child: Drawer(
+          elevation: 8,
+          child: SafeArea(
             child: Column(
               children: [
-                SizedBox(
-                  height: height,
-                  child: Obx(() => ListView.builder(
-                        padding: const EdgeInsets.all(0.0),
-                        itemCount: storeRoomController.ingredientList.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          IngredientModels data =
-                              storeRoomController.ingredientList[index];
-                          return GestureDetector(
-                            onTap: () async {
-                              selectedIndex = index;
-                              final data =
-                                  storeRoomController.ingredientList[index];
-                              ingredientId = data.ingredientId;
-                              selectedIngredient = data.ingredient!;
-                              scaffoldkey.currentState!.closeDrawer();
+                // ─── Header with Search ───────────────────────────
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                  width: double.infinity,
+                  color: primaryColor,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.categoryName ?? '',
+                        style: const TextStyle(
+                          fontFamily: 'Lexand',
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _searchController,
+                        onChanged: (q) => setState(() => _searchQuery = q),
+                        decoration: InputDecoration(
+                          hintText: 'Search…',
+                          hintStyle: const TextStyle(color: Colors.white70),
+                          prefixIcon:
+                              const Icon(Icons.search, color: Colors.white70),
+                          filled: true,
+                          fillColor: Colors.white24,
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 0),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
 
-                              if (ingredientId != null) {
-                                await storeRoomController.stockListApi(
-                                  category: widget.categoryName!,
-                                  item: ingredientId!,
-                                );
-                                if (storeRoomController.stockList.isNotEmpty) {
-                                  stockRecordId = storeRoomController
-                                      .stockList.last.id
-                                      .toString();
-                                }
-                              }
+                // ─── Filtered Ingredient List ────────────────────
+                Expanded(
+                  child: Obx(() {
+                    final allItems = storeRoomController.ingredientList;
+                    final filtered = _searchQuery.isEmpty
+                        ? allItems
+                        : allItems
+                            .where((e) => e.ingredient!
+                                .toLowerCase()
+                                .contains(_searchQuery.toLowerCase()))
+                            .toList();
 
-                              setState(() {});
-                            },
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: width * 0.04,
-                                vertical: height * 0.01,
-                              ),
-                              child: Container(
-                                height: height * 0.05,
-                                decoration: BoxDecoration(
-                                  color: selectedIndex == index
-                                      ? primaryColor
-                                      : Colors.white,
-                                  border: Border.all(
-                                    color: selectedIndex == index
-                                        ? Colors.white
-                                        : Colors.black,
-                                    width: width * 0.001,
-                                  ),
-                                  borderRadius: BorderRadius.circular(30.0),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    data.ingredient!,
-                                    style: TextStyle(
-                                      color: selectedIndex == index
-                                          ? Colors.white
-                                          : Colors.black,
-                                      fontFamily: "Lexand",
-                                      fontSize: height * 0.012,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
+                    return ListView.separated(
+                      padding: EdgeInsets.zero,
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (ctx, idx) {
+                        final data = filtered[idx];
+                        final isSelected = data.ingredientId == ingredientId;
+
+                        return Material(
+                          color:
+                              isSelected ? primaryColor.withOpacity(0.1) : null,
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: isSelected
+                                  ? primaryColor
+                                  : Colors.grey.shade300,
+                              child: Text(
+                                data.ingredient![0].toUpperCase(),
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.grey.shade700,
                                 ),
                               ),
                             ),
-                          );
-                        },
-                      )),
+                            title: Text(
+                              data.ingredient!,
+                              style: TextStyle(
+                                fontFamily: 'Lexand',
+                                fontSize: 16,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                color:
+                                    isSelected ? primaryColor : Colors.black87,
+                              ),
+                            ),
+                            trailing: isSelected
+                                ? Icon(Icons.keyboard_arrow_right,
+                                    color: primaryColor)
+                                : null,
+                            onTap: () async {
+                              // preserve your original tap behavior:
+                              setState(() {
+                                ingredientId = data.ingredientId;
+                                selectedIngredient = data.ingredient!;
+                              });
+                              Navigator.of(context).pop();
+                              await storeRoomController.stockListApi(
+                                category: widget.categoryName!,
+                                item: ingredientId!,
+                              );
+                              if (storeRoomController.stockList.isNotEmpty) {
+                                stockRecordId = storeRoomController
+                                    .stockList.last.id
+                                    .toString();
+                              }
+                              setState(() {});
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  }),
                 ),
               ],
             ),
@@ -1130,7 +1191,18 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
                       onPressed: () async {
                         // Validate all fields first
                         if (!_formKey.currentState!.validate()) return;
-
+                        // 2) now check that the three add up to at most 100
+                        final p = int.parse(alertProcessingPct.text);
+                        final pack = int.parse(alertPackagingPct.text);
+                        final e = int.parse(alertEnvironmentPct.text);
+                        final total = p + pack + e;
+                        if (total > 100) {
+                          AnimatedSnackBar.material(
+                            'Total breakdown cannot exceed 100%',
+                            type: AnimatedSnackBarType.error,
+                          ).show(context);
+                          return;
+                        }
                         try {
                           final res = await storeRoomController.editStock(
                             stockId: stockId,

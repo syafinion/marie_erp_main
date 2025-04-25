@@ -1,5 +1,7 @@
 package io.flutter.plugins;
 
+import android.Manifest;                          
+import android.content.pm.PackageManager;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -29,7 +31,8 @@ import io.flutter.plugin.common.MethodChannel;
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "io.flutter.plugins/printer";
     private static final String TAG = "MainActivity";
-
+    private MethodChannel.Result pendingConnectResult;
+    private String pendingDeviceName;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothLeScanner bluetoothLeScanner;
     private ScanCallback bleScanCallback;
@@ -37,22 +40,28 @@ public class MainActivity extends FlutterActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        // Initialize CTPL
         CTPL.getInstance().init(getApplication(), new RespCallback() {
             @Override
             public void onConnectRespsonse(int port, int reason) {
-                Log.d(TAG, "Connection result: Port=" + port + ", Reason=" + reason);
-                Toast.makeText(MainActivity.this,
-                        "Connection result: Port=" + port + ", Reason=" + reason,
-                        Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "onConnectRespsonse(port=" + port + ", reason=" + reason + ")");
+                if (pendingConnectResult == null) return;
+                if (reason == 0) {
+                    pendingConnectResult.success("Connected to printer: " + pendingDeviceName);
+                } else {
+                    pendingConnectResult.error(
+                      "CONNECTION_FAILED",
+                      "CTPL reason code: " + reason,
+                      null
+                    );
+                }
+                pendingConnectResult = null;
             }
 
             @Override
             public void onDataResponse(java.util.HashMap<String, String> result) {
-                Log.d(TAG, "Data response: " + result);
+                Log.d(TAG, "onDataResponse: " + result);
             }
 
             @Override
@@ -61,33 +70,36 @@ public class MainActivity extends FlutterActivity {
             }
         });
 
-        // Flutter Method Channel
         new MethodChannel(getFlutterEngine().getDartExecutor().getBinaryMessenger(), CHANNEL)
             .setMethodCallHandler((call, result) -> {
                 switch (call.method) {
                     case "connectPrinter":
                         connectPrinter(result);
                         break;
-
+                    case "isPrinterConnected":
+                        result.success(CTPL.getInstance().isConnected());
+                        break;
                     case "printSampleText":
                         printSampleText(result);
                         break;
-
                     case "printBarcode":
-                        // Retrieve all arguments from the call
-                        String barcodeData = call.argument("barcodeData");
-                        String itemCode = call.argument("itemCode");
-                        String itemName = call.argument("itemName");
+                        // <-- HERE
+                        String barcodeData     = call.argument("barcodeData");
+                        String itemCode        = call.argument("itemCode");
+                        String itemName        = call.argument("itemName");
                         String storageLocation = call.argument("storageLocation");
-
-                        // Pass them all to printBarcode
-                        printBarcode(result, barcodeData, itemCode, itemName, storageLocation);
+                        printBarcode(
+                          result,
+                          barcodeData,
+                          itemCode,
+                          itemName,
+                          storageLocation
+                        );
                         break;
-
-                    case "searchBluetoothDevices":
+                
+                      case "searchBluetoothDevices":
                         searchBluetoothDevices(result);
                         break;
-
                     default:
                         result.notImplemented();
                 }
@@ -96,51 +108,65 @@ public class MainActivity extends FlutterActivity {
 
     private void connectPrinter(MethodChannel.Result result) {
         try {
-            if (!isBluetoothEnabled()) {
-                result.error("BLUETOOTH_DISABLED",
-                             "Enable Bluetooth and try again.",
-                             null);
-                return;
-            }
-
-            Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-            if (pairedDevices.isEmpty()) {
-                result.error("NO_PAIRED_DEVICES",
-                             "No paired Bluetooth devices found.",
-                             null);
-                return;
-            }
-
-            BluetoothDevice targetDevice = null;
-            for (BluetoothDevice device : pairedDevices) {
-                Log.d(TAG, "Paired device: " + device.getName() + " - " + device.getAddress());
-                if (device.getName() != null && device.getName().contains("CT")) {
-                    // Adjust "CT" to match the printer's name or ID
-                    targetDevice = device;
-                    break;
+            // On Android 12+ you still need BLUETOOTH_CONNECT at runtime
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(
+                        new String[]{ Manifest.permission.BLUETOOTH_CONNECT },
+                        1001
+                    );
+                    return; // ask permission first
                 }
             }
-
-            if (targetDevice == null) {
-                result.error("PRINTER_NOT_FOUND",
-                             "Printer not found among paired devices.",
-                             null);
+    
+            // If we're already connected, simply report success
+            if (CTPL.getInstance().isConnected()) {
+                result.success("Already connected: " + pendingDeviceName);
                 return;
             }
-
-            // Use Device class to connect
+    
+            // Standard Bluetooth checks
+            if (!isBluetoothEnabled()) {
+                result.error("BLUETOOTH_DISABLED", "Enable Bluetooth and try again.", null);
+                return;
+            }
+            Set<BluetoothDevice> paired = bluetoothAdapter.getBondedDevices();
+            if (paired.isEmpty()) {
+                result.error("NO_PAIRED_DEVICES", "No paired Bluetooth devices found.", null);
+                return;
+            }
+    
+            // Find your “CT” printer
+            BluetoothDevice target = null;
+            for (BluetoothDevice d : paired) {
+                if (d.getName()!=null && d.getName().contains("CT")) {
+                    target = d; break;
+                }
+            }
+            if (target==null) {
+                result.error("PRINTER_NOT_FOUND", "Printer not found among paired devices.", null);
+                return;
+            }
+    
+            // Hold onto the result until onConnectResponse
+            pendingConnectResult = result;
+            pendingDeviceName     = target.getName();
+    
+            // Kick off async connect
             Device printerDevice = new Device();
-            printerDevice.setBluetoothMacAddr(targetDevice.getAddress());
-            printerDevice.setPort(Port.SPP); // Use SPP for Bluetooth
-
+            printerDevice.setBluetoothMacAddr(target.getAddress());
+            printerDevice.setPort(Port.SPP);  // or Port.LE
             CTPL.getInstance().connect(printerDevice);
-
-            result.success("Connected to printer: " + targetDevice.getName());
+    
         } catch (Exception e) {
             Log.e(TAG, "Connection error", e);
             result.error("CONNECTION_ERROR", e.getMessage(), null);
         }
     }
+    
+    
+      
 
     private void printSampleText(MethodChannel.Result result) {
         try {
@@ -188,66 +214,48 @@ public class MainActivity extends FlutterActivity {
         CTPL.getInstance().setSize(paperWidth, paperHeight);
 
         // We'll keep your existing barcode logic
-        int barcodeHeight = 80;
-        int barcodeWidth = 300;
-        int paperWidthPx = paperWidth * 8;  // convert mm to ~dots (8 dots per mm)
+        int narrowBar = 2;
+        int wideBar = 2;
+        int dataLength = barcodeData.length();
+        int totalModules = 11 * (dataLength + 3); // CODE128 formula
+        int barcodeWidth = totalModules * narrowBar;
+        int paperWidthPx = paperWidth * 8; // Convert mm to dots (8 dots/mm)
         int leftMargin = (paperWidthPx - barcodeWidth) / 2;
 
-        // Draw the barcode near the top
+        // Draw the barcode centered
+        int barcodeHeight = 80;
         CTPL.getInstance().drawBarCode(
                 new Point(leftMargin, 10),
                 barcodeHeight,
                 BarCode.CODE_128,
                 null,
                 null,
-                2,   // narrow bar width
-                4,   // wide bar width
+                narrowBar,
+                wideBar,
                 barcodeData
         );
 
-        // Now we'll print four lines of text below it, all **centered** and bigger
-        // Let's define a bigger text scale: (2, 2)
-        int scale = 2;
-        int textY = 100; // start printing text below the barcode
+// Centered text below the barcode
+int scale = 2;
+int textY = 10 + barcodeHeight + 20;
 
-        // 1) "Barcode: 123456..."
-        String line1 = "" + barcodeData;
-        int xLine1 = getCenteredX(line1, paperWidthPx, scale);
+         // Print each line centered
+         String[] lines = {
+            "      " + barcodeData,
+            "      " + itemCode,
+            "      " + itemName,
+            "      " + storageLocation
+    };
+
+    for (String line : lines) {
+        int x = getCenteredX(line, paperWidthPx, scale);
         CTPL.getInstance().drawText(
-                new Point(xLine1, textY),
+                new Point(x, textY),
                 scale, scale,
-                line1
+                line
         );
-
-        // 2) "Item Code: VEG001"
-        textY += 40; // move down for next line
-        String line2 = "" + itemCode;
-        int xLine2 = getCenteredX(line2, paperWidthPx, scale);
-        CTPL.getInstance().drawText(
-                new Point(xLine2, textY),
-                scale, scale,
-                line2
-        );
-
-        // 3) "Item Name: Tomato"
         textY += 40;
-        String line3 = "" + itemName;
-        int xLine3 = getCenteredX(line3, paperWidthPx, scale);
-        CTPL.getInstance().drawText(
-                new Point(xLine3, textY),
-                scale, scale,
-                line3
-        );
-
-        // 4) "Location: Chiller"
-        textY += 40;
-        String line4 = "" + storageLocation;
-        int xLine4 = getCenteredX(line4, paperWidthPx, scale);
-        CTPL.getInstance().drawText(
-                new Point(xLine4, textY),
-                scale, scale,
-                line4
-        );
+    }
 
         // Finally, print
         CTPL.getInstance()

@@ -150,58 +150,71 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-// Separate screen for sliding options
 class SlideInOptionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Keep full‐screen semi‐transparent overlay
       backgroundColor: Colors.black.withOpacity(0.5),
-      body: Center(
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.8,
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(Icons.add_box,
-                    color: Colors.green), // Changed color to green
-                title: Text("Stock In", style: TextStyle(fontFamily: "Lexand")),
-                onTap: () {
-                  Navigator.of(context).pop(); // Close the panel
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => BarcodeScannerPage(
-                        ingredientId:
-                            'stock_in', // Pass identifier for stock in
-                      ),
-                    ),
-                  );
-                },
+      body: GestureDetector(
+        // Tapping anywhere outside the card closes the panel
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.of(context).pop(),
+        child: Center(
+          // Inner GestureDetector absorbs taps so the card itself doesn’t close
+          child: GestureDetector(
+            onTap: () {},
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.8,
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                  ),
+                ],
               ),
-              Divider(),
-              ListTile(
-                leading: Icon(Icons.remove_circle,
-                    color: Colors.red), // Changed color to red
-                title:
-                    Text("Stock Out", style: TextStyle(fontFamily: "Lexand")),
-                onTap: () {
-                  Navigator.of(context).pop(); // Close the panel
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => BarcodeScannerPage(
-                        ingredientId:
-                            'stock_out', // Pass identifier for stock out
-                      ),
-                    ),
-                  );
-                },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: Icon(Icons.add_box, color: Colors.green),
+                    title: Text("Stock In",
+                        style: TextStyle(fontFamily: "Lexand")),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => BarcodeScannerPage(
+                            ingredientId: 'stock_in',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Icon(Icons.remove_circle, color: Colors.red),
+                    title: Text("Stock Out",
+                        style: TextStyle(fontFamily: "Lexand")),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => BarcodeScannerPage(
+                            ingredientId: 'stock_out',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
