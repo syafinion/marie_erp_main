@@ -190,6 +190,15 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
   }
 
   Widget _buildMonthlySummaryCard() {
+    final selectedIng = storeRoomController.ingredientList.firstWhere(
+      (e) => e.ingredientId == ingredientId,
+      orElse: () => storeRoomController.ingredientList.first,
+    );
+
+// ── use the same date string you already have in stackAddingDate:
+    final initialDate = DateTime.parse(stackAddingDate.text);
+    final initialDateStr = DateFormat("d/M/yyyy").format(initialDate);
+
     // 1. filter and sort this month’s records
     final list = storeRoomController.stockList.where((s) {
       final d = DateTime.parse(s.datecreated!);
@@ -221,11 +230,16 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
     );
     final closing = opening + totalIn - totalOut;
 
-    // 3. average price = sum of all prices ÷ totalIn
+// 3. weighted sum of all costs
     final priceSum = list.fold<double>(
       0.0,
-      (sum, s) => sum + (double.tryParse(s.pricePerUnit ?? '0') ?? 0.0),
+      (sum, s) =>
+          sum +
+          (double.tryParse(s.pricePerUnit ?? '0') ?? 0.0) *
+              (double.tryParse(s.stockCount ?? '0') ?? 0.0),
     );
+
+// 4. weighted average price per unit
     final avgPrice = totalIn > 0 ? priceSum / totalIn : 0.0;
 
     return Padding(
@@ -310,6 +324,52 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
                       ),
                     ],
                   ),
+
+                  // 1) “Stock In” initial row comes from the ingredient’s packageWeight
+                  // TableRow(
+                  //   children: [
+                  //     // date
+                  //     Padding(
+                  //       padding: const EdgeInsets.symmetric(vertical: 12),
+                  //       child: Text(
+                  //         initialDateStr,
+                  //         textAlign: TextAlign.center,
+                  //         style: const TextStyle(fontFamily: "Lexand"),
+                  //       ),
+                  //     ),
+
+                  //     // Stock In ← packageWeight from the **selected** ingredient
+                  //     Padding(
+                  //       padding: const EdgeInsets.symmetric(vertical: 12),
+                  //       child: Text(
+                  //         selectedIng.packageWeight ?? '0',
+                  //         textAlign: TextAlign.center,
+                  //         style: const TextStyle(fontFamily: "Lexand"),
+                  //       ),
+                  //     ),
+
+                  //     // Stock Out
+                  //     Padding(
+                  //       padding: const EdgeInsets.symmetric(vertical: 12),
+                  //       child: Text(
+                  //         '-',
+                  //         textAlign: TextAlign.center,
+                  //         style: const TextStyle(fontFamily: "Lexand"),
+                  //       ),
+                  //     ),
+
+                  //     // Total Price
+                  //     Padding(
+                  //       padding: const EdgeInsets.symmetric(vertical: 12),
+                  //       child: Text(
+                  //         '-',
+                  //         textAlign: TextAlign.center,
+                  //         style: const TextStyle(fontFamily: "Lexand"),
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
+
                   // data rows
                   for (var s in list)
                     TableRow(
