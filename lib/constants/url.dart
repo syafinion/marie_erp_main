@@ -1,3 +1,53 @@
+/*
+ * File: url.dart
+ * Project: Marie ERP
+ * Created Date: 2024
+ * 
+ * Copyright (c) 2024 Group 17
+ * 
+ * Authors:
+ * - All Group 17 Members
+ * 
+ * Description:
+ * Constants file that defines all API endpoints for the Marie ERP system.
+ * Contains base URL configurations for different environments and a comprehensive
+ * mapping of all available API endpoints. Centralizes URL management for
+ * consistent API communication across the application.
+ * 
+ * Features:
+ * - Configurable base URL for different environments
+ * - Complete API endpoint mapping
+ * - Environment-specific URL switching
+ * - Structured endpoint organization by feature
+ * 
+ * API Endpoints Categories:
+ * - Authentication (login, register)
+ * - Stock Management (create, edit, delete, list)
+ * - Ingredient Management (list, create, edit, delete)
+ * - Storage Location Management
+ * - Barcode Operations
+ * - File Downloads
+ * 
+ * Environment URLs:
+ * - Production: https://app.gomarie.com/Marie-ERP/api/
+ * - Development: Various local IP configurations
+ * - Testing: localhost configurations
+ * 
+ * Usage:
+ * - Import this file to access API endpoints
+ * - Use endPoint map to get full URLs
+ * - Switch baseUrl for different environments
+ * 
+ * Security Notes:
+ * - HTTPS required for production
+ * - Local development supports HTTP
+ * - API versioning handled in base URL
+ * 
+ * Modified/Adapted From:
+ * - Flutter URL configuration patterns
+ *   Source: https://docs.flutter.dev/development/data-and-backend/networking
+ */
+
 // var baseUrl = "https://app.gomarie.com/Marie-ERP/api/";
 // var baseUrl = "http://172.20.10.2:8000/api/";
 // var baseUrl = "http://10.163.5.3:8000/api/";
