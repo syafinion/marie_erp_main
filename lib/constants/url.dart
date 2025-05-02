@@ -5,14 +5,15 @@
 // var baseUrl = "http://172.18.144.151:8000/api/";
 // var baseUrl = "http://192.168.79.117:8000/api/"; // qi shean
 // var baseUrl = "http://10.163.10.141:8000/api/";
-var baseUrl = "http://192.168.205.117:8000/api/"; // univ
+// var baseUrl = "http://192.168.205.117:8000/api/"; // univ
 // var baseUrl = "http://10.163.4.166:8000/api/"; // try and error campus wifi
 // var baseUrl = "http://192.168.205.117:8000/api/"; // hotspot
 // var baseUrl = "http://192.168.0.7:8000/api/"; // code black cafe
-// var baseUrl = "http://192.168.0.197:8000/api/"; // home
+var baseUrl = "http://192.168.0.197:8000/api/"; // home
 
 Map endPoint = {
   "login": "${baseUrl}login",
+  "register": "${baseUrl}register",
   "selectingStock": "${baseUrl}stocks/selectingStock",
   "stockCreation": "${baseUrl}stocks/create",
   "stockEdit": "${baseUrl}stocks/edit",

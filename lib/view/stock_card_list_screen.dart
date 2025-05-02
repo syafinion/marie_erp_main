@@ -1,3 +1,58 @@
+/*
+ * File: stock_card_list_screen.dart
+ * Project: Marie ERP
+ * Created Date: 2024
+ * 
+ * Copyright (c) 2024 Group 17
+ * 
+ * Authors:
+ * - All Group 17 Members
+ * 
+ * Description:
+ * A Flutter widget that implements the stock card listing and detailed view functionality.
+ * Provides a list of ingredients with their stock information, detailed stock analysis,
+ * and wastage tracking through multiple interactive dialogs. Features data visualization
+ * for usage and wastage statistics.
+ * 
+ * Features:
+ * - Ingredient list with images and details
+ * - Multiple detailed pop-up dialogs for stock information
+ * - Stock movement tracking (in/out)
+ * - Usage and wastage analysis with pie charts
+ * - Detailed cost calculations
+ * - Processing, packaging, and environmental waste tracking
+ * - Interactive data tables with summaries
+ * 
+ * Libraries Used:
+ * - flutter/material.dart - Flutter's material design widgets
+ * - pie_chart - Data visualization for usage/wastage
+ * - get - State management (GetX)
+ * 
+ * External Dependencies:
+ * - pie_chart: ^5.3.2
+ *   Source: https://pub.dev/packages/pie_chart
+ * - get: ^4.6.5
+ *   Source: https://pub.dev/packages/get
+ * 
+ * Assets Required:
+ * - food1.png - Ladies Finger image
+ * - food3.png - Snake Guard image 
+ * - food8.png - Orange image
+ * 
+ * State Management:
+ * - Local state managed with setState
+ * - Dialog state management with StatefulBuilder
+ * - Responsive layout calculations
+ * 
+ * Modified/Adapted From:
+ * - Flutter dialog implementation guide
+ *   Source: https://api.flutter.dev/flutter/material/Dialog-class.html
+ * - Pie Chart implementation guide
+ *   Source: https://pub.dev/packages/pie_chart/example
+ * - Flutter responsive layout patterns
+ *   Source: https://docs.flutter.dev/ui/layout/adaptive-responsive
+ */
+
 import 'package:flutter/material.dart';
 import 'package:pie_chart/pie_chart.dart'; // Ensure this dependency is in your pubspec.yaml
 import '../constants/color.dart';

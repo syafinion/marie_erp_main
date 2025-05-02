@@ -1,3 +1,66 @@
+/*
+ * File: stock_card_edit_screen.dart
+ * Project: Marie ERP
+ * Created Date: 2024
+ * 
+ * Copyright (c) 2024 Group 17
+ * 
+ * Authors:
+ * - Syafiq
+ * 
+ * Description:
+ * A Flutter widget that implements the stock card editing functionality.
+ * Provides detailed stock tracking with monthly summaries, usage analytics,
+ * and wastage breakdowns. Features interactive data visualization and
+ * real-time updates.
+ * 
+ * Features:
+ * - Monthly stock summary with in/out tracking
+ * - Usage and wastage analytics with pie charts
+ * - Detailed breakdown of processing/packaging/environmental waste
+ * - Real-time stock level monitoring
+ * - Interactive data editing capabilities
+ * - Filtered ingredient selection
+ * - Cost analysis and pricing calculations
+ * 
+ * Libraries Used:
+ * - flutter/material.dart - Flutter's material design widgets
+ * - get - State management (GetX)
+ * - pie_chart - Data visualization
+ * - intl - Date formatting
+ * - animated_snack_bar - Toast notifications
+ * - flutter_custom_month_picker - Month selection
+ * 
+ * External Dependencies:
+ * - get: ^4.6.5
+ *   Source: https://pub.dev/packages/get
+ * - pie_chart: ^5.3.2
+ *   Source: https://pub.dev/packages/pie_chart
+ * - intl: ^0.18.0
+ *   Source: https://pub.dev/packages/intl
+ * - animated_snack_bar: ^0.3.1
+ *   Source: https://pub.dev/packages/animated_snack_bar
+ * - flutter_custom_month_picker: ^1.0.0
+ *   Source: https://pub.dev/packages/flutter_custom_month_picker
+ * 
+ * Assets Required:
+ * - right-icon.png - Navigation icon
+ * - calendar.png - Date picker icon
+ * 
+ * State Management:
+ * - Uses GetX for store room state (StoreRoomController)
+ * - Local form state managed with setState
+ * - Monthly data filtering and calculations
+ * 
+ * Modified/Adapted From:
+ * - Flutter data table implementation guide
+ *   Source: https://api.flutter.dev/flutter/material/DataTable-class.html
+ * - GetX state management patterns
+ *   Source: https://github.com/jonataslaw/getx/blob/master/documentation/en_US/state_management.md
+ * - Pie Chart implementation guide
+ *   Source: https://pub.dev/packages/pie_chart/example
+ */
+
 import 'package:animated_snack_bar/animated_snack_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -207,40 +270,35 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
       ..sort((a, b) => DateTime.parse(a.datecreated!)
           .compareTo(DateTime.parse(b.datecreated!)));
 
-    if (list.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          "No stock data for this month",
-          style: TextStyle(fontFamily: "Lexand", color: borderColor),
-        ),
-      );
-    }
+    // ─── include the initial packageWeight as stock-in ─────────────────
+    final int initialWeight =
+        int.tryParse(selectedIng.packageWeight ?? '0') ?? 0;
+    final double unitPrice =
+        double.tryParse(selectedIng.unitPrice ?? '0') ?? 0.0;
 
-    final unit = list.first.unit;
-    // 2. compute opening, totalIn, totalOut, closing
-    final opening = int.tryParse(list.first.stockCount ?? '0') ?? 0;
-    final totalIn = list.fold<int>(
-      0,
-      (sum, s) => sum + (int.tryParse(s.stockCount ?? '0') ?? 0),
-    );
-    final totalOut = list.fold<int>(
-      0,
-      (sum, s) => sum + (int.tryParse(s.consumption ?? '0') ?? 0),
-    );
-    final closing = opening + totalIn - totalOut;
+    // month’s transactions
+    final int sumInTx = list.fold<int>(
+        0, (sum, s) => sum + (int.tryParse(s.stockCount ?? '0') ?? 0));
+    final int sumOutTx = list.fold<int>(
+        0, (sum, s) => sum + (int.tryParse(s.consumption ?? '0') ?? 0));
 
-// 3. weighted sum of all costs
-    final priceSum = list.fold<double>(
-      0.0,
-      (sum, s) =>
-          sum +
-          (double.tryParse(s.pricePerUnit ?? '0') ?? 0.0) *
-              (double.tryParse(s.stockCount ?? '0') ?? 0.0),
-    );
+    // now combine
+    final String unit = selectedIng.measurement ?? '';
+    final int opening = initialWeight; // initial stock
+    final int totalIn = initialWeight + sumInTx; // include initial
+    final int totalOut = sumOutTx;
+    final int closing = opening + sumInTx - totalOut;
 
-// 4. weighted average price per unit
-    final avgPrice = totalIn > 0 ? priceSum / totalIn : 0.0;
+    // cost: transactions + initial
+    final double txCostSum = list.fold<double>(
+        0.0,
+        (sum, s) =>
+            sum +
+            (int.tryParse(s.stockCount ?? '0') ?? 0) *
+                (double.tryParse(s.pricePerUnit ?? '0') ?? 0.0));
+    final double initialCost = initialWeight * unitPrice;
+    final double avgPrice =
+        totalIn > 0 ? (initialCost + txCostSum) / totalIn : 0.0;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -326,49 +384,52 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
                   ),
 
                   // 1) “Stock In” initial row comes from the ingredient’s packageWeight
-                  // TableRow(
-                  //   children: [
-                  //     // date
-                  //     Padding(
-                  //       padding: const EdgeInsets.symmetric(vertical: 12),
-                  //       child: Text(
-                  //         initialDateStr,
-                  //         textAlign: TextAlign.center,
-                  //         style: const TextStyle(fontFamily: "Lexand"),
-                  //       ),
-                  //     ),
+                  TableRow(
+                    children: [
+                      // date
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          initialDateStr,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontFamily: "Lexand"),
+                        ),
+                      ),
 
-                  //     // Stock In ← packageWeight from the **selected** ingredient
-                  //     Padding(
-                  //       padding: const EdgeInsets.symmetric(vertical: 12),
-                  //       child: Text(
-                  //         selectedIng.packageWeight ?? '0',
-                  //         textAlign: TextAlign.center,
-                  //         style: const TextStyle(fontFamily: "Lexand"),
-                  //       ),
-                  //     ),
+                      // Stock In ← packageWeight from the selected ingredient
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          selectedIng.packageWeight ?? '–',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontFamily: "Lexand"),
+                        ),
+                      ),
 
-                  //     // Stock Out
-                  //     Padding(
-                  //       padding: const EdgeInsets.symmetric(vertical: 12),
-                  //       child: Text(
-                  //         '-',
-                  //         textAlign: TextAlign.center,
-                  //         style: const TextStyle(fontFamily: "Lexand"),
-                  //       ),
-                  //     ),
+                      // Stock Out
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          '–',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontFamily: "Lexand"),
+                        ),
+                      ),
 
-                  //     // Total Price
-                  //     Padding(
-                  //       padding: const EdgeInsets.symmetric(vertical: 12),
-                  //       child: Text(
-                  //         '-',
-                  //         textAlign: TextAlign.center,
-                  //         style: const TextStyle(fontFamily: "Lexand"),
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
+                      // Total Price ← unitPrice from the selected ingredient
+                      // Total Price ← initialCost
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          initialWeight > 0
+                              ? (initialWeight * unitPrice).toStringAsFixed(2)
+                              : '–',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontFamily: "Lexand"),
+                        ),
+                      ),
+                    ],
+                  ),
 
                   // data rows
                   for (var s in list)
@@ -399,22 +460,39 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
                             style: const TextStyle(fontFamily: "Lexand"),
                           ),
                         ),
+                        // 3) Total Price = stockCount × pricePerUnit
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: Text(
-                            // parse safely, multiply, then format to 2 decimal places
-                            ((int.tryParse(s.stockCount ?? '0') ?? 0) *
-                                    (double.tryParse(s.pricePerUnit ?? '0') ??
-                                        0.0))
-                                .toStringAsFixed(2),
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontFamily: "Lexand"),
-                          ),
+                          child: Builder(builder: (_) {
+                            final int qty =
+                                int.tryParse(s.stockCount ?? '0') ?? 0;
+                            final double ppu =
+                                double.tryParse(s.pricePerUnit ?? '0') ?? 0.0;
+                            final double total = qty * ppu;
+                            return Text(
+                              qty > 0
+                                  ? total.toStringAsFixed(2) // e.g. “15.00”
+                                  : '–',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontFamily: "Lexand"),
+                            );
+                          }),
                         ),
                       ],
                     ),
                 ],
               ),
+
+              // optional “no transactions” note
+              if (list.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(
+                    "No stock-in/-out records for this month",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: borderColor),
+                  ),
+                ),
 
               const SizedBox(height: 24),
 
@@ -490,33 +568,56 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
     double avgPrice,
     double width,
   ) {
-    final unit = list.isNotEmpty ? list.first.unit : '';
-    // 1. compute actual usage & wastage
+    // ─── pull in the “initial” package weight ─────────────────────────
+    final selectedIng = storeRoomController.ingredientList.firstWhere(
+      (e) => e.ingredientId == ingredientId,
+      orElse: () => storeRoomController.ingredientList.first,
+    );
+    final int initialWeight =
+        int.tryParse(selectedIng.packageWeight ?? '0') ?? 0;
+    final double unitPrice =
+        double.tryParse(selectedIng.unitPrice ?? '0') ?? 0.0;
+
+    final unit =
+        list.isNotEmpty ? list.first.unit : selectedIng.measurement ?? '';
+
+    // 1. compute actual usage & wastage (unchanged)
     final actualUsage = list.fold<double>(
       0.0,
       (sum, s) => sum + (double.tryParse(s.consumption ?? '0') ?? 0.0),
     );
 
-    final totalIn = list.fold<double>(
+    // 2. include initialWeight in total-in
+    final double sumInTx = list.fold<double>(
       0.0,
       (sum, s) => sum + (double.tryParse(s.stockCount ?? '0') ?? 0.0),
     );
+    final double totalIn = initialWeight + sumInTx;
 
     final wastage = (totalOut - actualUsage).clamp(0.0, totalOut.toDouble());
 
-    final priceSum = list.fold<double>(
+    // 3. include initialCost alongside transaction costs
+    final double txCostSum = list.fold<double>(
       0.0,
-      (sum, s) => sum + (double.tryParse(s.pricePerUnit ?? '0') ?? 0.0),
+      (sum, s) {
+        final qty = double.tryParse(s.stockCount ?? '0') ?? 0.0;
+        final ppu = double.tryParse(s.pricePerUnit ?? '0') ?? 0.0;
+        return sum + qty * ppu;
+      },
     );
-    final avgPrice = totalIn > 0 ? priceSum / totalIn : 0.0;
 
-    final totalPrice = list.fold<double>(
-      0.0,
-      (sum, s) =>
-          sum +
-          (double.tryParse(s.pricePerUnit ?? '0') ?? 0.0) *
-              (double.tryParse(s.stockCount ?? '0') ?? 0.0),
-    );
+    final double initialCost = initialWeight * unitPrice;
+    final double avgPrice =
+        totalIn > 0 ? (initialCost + txCostSum) / totalIn : 0.0;
+
+    final double totalPrice = initialCost +
+        list.fold<double>(
+          0.0,
+          (sum, s) =>
+              sum +
+              (double.tryParse(s.pricePerUnit ?? '0') ?? 0.0) *
+                  (double.tryParse(s.stockCount ?? '0') ?? 0.0),
+        );
 
     // 3. breakdown percentages (you can replace these with your real fields)
     final latest = list.last;
@@ -532,11 +633,11 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
     final usageKg = actualUsage - wastageKg;
 
     // 2. cost metrics
-    final totalCost = avgPrice * totalOut;
+    final double totalCost = avgPrice * totalOut;
     // final actualUsagePrice = avgPrice * actualUsage;
     // final wastageCost = totalCost - actualUsagePrice;
-    final usageCost = avgPrice * usageKg;
-    final wastageCost = avgPrice * wastageKg;
+    final double usageCost = avgPrice * usageKg;
+    final double wastageCost = avgPrice * wastageKg;
 
     // 5. percentages for your metric cards
     final usagePct = totalOut > 0 ? (usageKg / totalOut) * 100.0 : 0.0;
@@ -1113,7 +1214,7 @@ class _StockCardEditScreenState extends State<StockCardEditScreen> {
               ),
             ),
             (ingredientId != null && ingredientId!.isNotEmpty)
-                ? Obx(() => _buildMonthlySummaryCard())
+                ? _buildMonthlySummaryCard()
                 : Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(

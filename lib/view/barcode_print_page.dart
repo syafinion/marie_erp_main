@@ -1,3 +1,31 @@
+/*
+ * File: barcode_print_page.dart
+ * Project: Marie ERP
+ * Created Date: 2024
+ * 
+ * Copyright (c) 2024 Group 17
+ * 
+ * Authors:
+ * - Syafiq
+ * 
+ * Description:
+ * A Flutter widget that handles barcode printing functionality. This page allows users
+ * to connect to a printer via Bluetooth and print barcode labels with item details.
+ * 
+ * Libraries Used:
+ * - flutter/material.dart - Flutter's material design widgets (Standard Flutter Library)
+ * - flutter/services.dart - Platform communication (Standard Flutter Library)
+ * 
+ * Implementation Notes:
+ * - Uses MethodChannel for native platform communication with printer hardware
+ * - Custom UI components for printer status and barcode preview
+ * - Implements error handling and connection status management
+ * 
+ * Modified/Adapted From:
+ * - Bluetooth printer integration based on Flutter's platform channel documentation
+ *   Source: https://docs.flutter.dev/platform-integration
+ */
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:marie_erp/constants/color.dart'; // for primaryColor, borderColor, etc.

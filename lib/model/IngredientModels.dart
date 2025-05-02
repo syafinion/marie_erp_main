@@ -1,3 +1,50 @@
+/*
+ * File: IngredientModels.dart
+ * Project: Marie ERP
+ * Created Date: 2024
+ * 
+ * Copyright (c) 2024 Group 17
+ * 
+ * Authors:
+ * - All Group 17 Members
+ * 
+ * Description:
+ * Data model class that represents ingredients in the Marie ERP system.
+ * Implements JSON serialization/deserialization for API communication and
+ * local storage. Handles all ingredient-related attributes including
+ * packaging types, measurements, and tracking information.
+ * 
+ * Features:
+ * - JSON serialization/deserialization
+ * - Multiple packaging type support (Loose/Carton/Bag)
+ * - Measurement system integration
+ * - Barcode tracking
+ * - Price and weight management
+ * - Storage location tracking
+ * - User association
+ * 
+ * Libraries Used:
+ * - dart:convert - JSON processing
+ * 
+ * Dependencies:
+ * - create_ingredients_model.dart - For Measurements class
+ * 
+ * Data Structure:
+ * - Basic ingredient information (name, ID)
+ * - Packaging information (type, weight)
+ * - Tracking data (barcode, location)
+ * - Price information
+ * - User association
+ * 
+ * API Integration:
+ * - Used in ingredient creation/update endpoints
+ * - Supports REST API communication
+ * - Handles null safety with default values
+ * 
+ * Modified/Adapted From:
+ * - Flutter JSON serialization patterns
+ *   Source: https://docs.flutter.dev/development/data-and-backend/json
+ */
 import 'package:marie_erp/model/create_ingredients_model.dart';
 
 class IngredientModels {
@@ -18,6 +65,7 @@ class IngredientModels {
 
   // Add the barcode field
   String? barcode;
+  String? userId;
 
   IngredientModels({
     this.isChecked,
@@ -32,7 +80,8 @@ class IngredientModels {
     this.unitPrice,
     this.storageLocation,
     this.itemCode,
-    this.barcode, // Include in constructor
+    this.barcode,
+    this.userId, // Include in constructor
   });
 
   IngredientModels.fromJson(Map<String, dynamic> json) {
@@ -53,6 +102,7 @@ class IngredientModels {
     storageLocation = json['storageLocation']?.toString() ?? '';
     itemCode = json['itemCode']?.toString();
     barcode = json['barcode']?.toString(); // Parse barcode
+    userId = json['userId']?.toString();
   }
 
   Map<String, dynamic> toJson() {
@@ -72,6 +122,7 @@ class IngredientModels {
     data['storageLocation'] = storageLocation;
     data['itemCode'] = itemCode;
     data['barcode'] = barcode; // Include barcode in JSON
+    data['userId'] = userId;
     return data;
   }
 }

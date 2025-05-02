@@ -1,3 +1,52 @@
+/*
+ * File: groups_screen.dart
+ * Project: Marie ERP
+ * Created Date: 2024
+ * 
+ * Copyright (c) 2024 Group 17
+ * 
+ * Authors:
+ * all group members
+ * 
+ * Description:
+ * A Flutter widget that implements the ingredient category selection screen.
+ * This screen allows restaurant owners to select the types of ingredients
+ * they use in their recipes. Features a grid layout with checkable categories
+ * and persistent storage of selections.
+ * 
+ * Features:
+ * - Grid view of ingredient categories with images
+ * - Persistent checkbox state management
+ * - Secure storage integration
+ * - User authentication status management
+ * - Restaurant profile information display
+ * 
+ * Libraries Used:
+ * - flutter/material.dart - Flutter's material design widgets
+ * - get - State management and dependency injection
+ * - flutter_secure_storage - Secure data persistence
+ * 
+ * External Dependencies:
+ * - flutter_secure_storage: ^8.0.0
+ *   Source: https://pub.dev/packages/flutter_secure_storage
+ * - get: ^4.6.5
+ *   Source: https://pub.dev/packages/get
+ * 
+ * Assets Required:
+ * - mrp2.png - Logo image
+ * - right-icon.png - Navigation icon
+ * - food1.png to food13.png - Category images
+ * 
+ * State Management:
+ * - Uses GetX for state management
+ * - CommonController for shared application state
+ * - GroupsController for screen-specific state
+ * 
+ * Modified/Adapted From:
+ * - Flutter Grid View implementation guide
+ *   Source: https://docs.flutter.dev/cookbook/lists/grid-lists
+ */
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';

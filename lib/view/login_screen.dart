@@ -1,4 +1,57 @@
-// ignore_for_file: use_build_context_synchronously
+/*
+ * File: login_screen.dart
+ * Project: Marie ERP
+ * Created Date: 2024
+ * 
+ * Copyright (c) 2024 group 17
+ * 
+ * Authors:
+ * All group members
+ * 
+ * Description:
+ * A Flutter widget that implements the authentication screen for Marie ERP.
+ * Handles user login with email/password, secure token storage, and navigation
+ * to main application screens. Features form validation and error handling.
+ * 
+ * Features:
+ * - User authentication with email and password
+ * - Secure token storage
+ * - Form validation with visual feedback
+ * - Password visibility toggle
+ * - Persistent login state
+ * - Animated error/success notifications
+ * - Navigation to signup and main screens
+ * 
+ * Libraries Used:
+ * - flutter/material.dart - Flutter's material design widgets
+ * - flutter_secure_storage - Secure token storage
+ * - get - State management (GetX)
+ * - animated_snack_bar - Toast notifications
+ * 
+ * External Dependencies:
+ * - flutter_secure_storage: ^8.0.0
+ *   Source: https://pub.dev/packages/flutter_secure_storage
+ * - get: ^4.6.5
+ *   Source: https://pub.dev/packages/get
+ * - animated_snack_bar: ^0.3.1
+ *   Source: https://pub.dev/packages/animated_snack_bar
+ * 
+ * Assets Required:
+ * - mrp_logo.png - Application logo
+ * - hand-icon.png - Welcome screen icon
+ * - user_icon.png - Username field icon
+ * 
+ * State Management:
+ * - Uses GetX for authentication state (AuthController)
+ * - Local form state managed with setState
+ * - Persistent auth token stored in FlutterSecureStorage
+ * 
+ * Modified/Adapted From:
+ * - Flutter form validation patterns
+ *   Source: https://docs.flutter.dev/cookbook/forms/validation
+ * - GetX authentication implementation guide
+ *   Source: https://github.com/jonataslaw/getx/blob/master/documentation/en_US/state_management.md
+ */
 
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,6 +60,7 @@ import 'package:marie_erp/constants/color.dart';
 import 'package:animated_snack_bar/animated_snack_bar.dart';
 import 'package:marie_erp/controller/auth_controller.dart';
 import 'package:marie_erp/view/main_screen.dart';
+import 'package:marie_erp/view/signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -351,7 +405,38 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                    )
+                    ),
+
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Don’t have an account? ",
+                          style: TextStyle(
+                            fontFamily: "Lexand",
+                            fontSize: height * 0.014,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SignupScreen(),
+                            ),
+                          ),
+                          child: Text(
+                            "Sign up",
+                            style: TextStyle(
+                              fontFamily: "Lexand",
+                              fontSize: height * 0.014,
+                              fontWeight: FontWeight.w600,
+                              color: buttonColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),

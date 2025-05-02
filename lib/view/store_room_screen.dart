@@ -1,3 +1,62 @@
+/*
+ * File: store_room_screen.dart
+ * Project: Marie ERP
+ * Created Date: 2024
+ * 
+ * Copyright (c) 2024 Group 17
+ * 
+ * Authors:
+ * - syafiq
+ * 
+ * Description:
+ * A Flutter widget that implements the main store room management interface.
+ * Provides comprehensive ingredient management with CRUD operations, storage
+ * location tracking, and real-time updates. Features an interactive UI for
+ * managing restaurant inventory with category-based organization.
+ * 
+ * Features:
+ * - Category-based ingredient management
+ * - Add/Edit/Delete ingredients
+ * - Storage location management
+ * - Barcode generation and tracking
+ * - Unit price and weight tracking
+ * - Package type selection (Loose/Carton/Bag)
+ * - Real-time inventory updates
+ * - Multi-category navigation
+ * - Responsive grid layout
+ * 
+ * Libraries Used:
+ * - flutter/material.dart - Flutter's material design widgets
+ * - get - State management (GetX)
+ * - flutter_secure_storage - Secure data storage
+ * - dart:convert - JSON processing
+ * - dart:math - Random number generation
+ * 
+ * External Dependencies:
+ * - get: ^4.6.5
+ *   Source: https://pub.dev/packages/get
+ * - flutter_secure_storage: ^8.0.0
+ *   Source: https://pub.dev/packages/flutter_secure_storage
+ * 
+ * Assets Required:
+ * - mrp2.png - App logo
+ * - food1.png to food13.png - Category icons
+ * 
+ * State Management:
+ * - Uses GetX for store room state (StoreRoomController)
+ * - Uses GetX for common state (CommonController)
+ * - Uses GetX for groups state (GroupsController)
+ * - Local UI state managed with setState
+ * 
+ * Modified/Adapted From:
+ * - Flutter dialog implementation guide
+ *   Source: https://api.flutter.dev/flutter/material/Dialog-class.html
+ * - GetX state management patterns
+ *   Source: https://github.com/jonataslaw/getx/blob/master/documentation/en_US/state_management.md
+ * - Flutter grid implementation
+ *   Source: https://docs.flutter.dev/cookbook/lists/grid-lists
+ */
+
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
@@ -447,6 +506,52 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
 
                                                           SizedBox(height: 16),
 
+                                                          TextFormField(
+                                                            controller:
+                                                                unitPriceController,
+                                                            keyboardType:
+                                                                TextInputType
+                                                                    .number,
+                                                            decoration:
+                                                                InputDecoration(
+                                                              labelText:
+                                                                  'Unit Price',
+                                                              floatingLabelBehavior:
+                                                                  FloatingLabelBehavior
+                                                                      .always,
+                                                              isDense: true,
+                                                              contentPadding:
+                                                                  EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          12,
+                                                                      vertical:
+                                                                          8),
+                                                              border:
+                                                                  OutlineInputBorder(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            15),
+                                                              ),
+                                                            ),
+                                                            validator: (val) {
+                                                              if (val == null ||
+                                                                  val
+                                                                      .trim()
+                                                                      .isEmpty) {
+                                                                return 'Please enter unit price';
+                                                              }
+                                                              if (!RegExp(
+                                                                      r'^\d+(\.\d{1,2})?$')
+                                                                  .hasMatch(val
+                                                                      .trim())) {
+                                                                return 'Enter a valid price (e.g. 12.50)';
+                                                              }
+                                                              return null;
+                                                            },
+                                                          ),
+                                                          SizedBox(height: 16),
+
                                                           // Containers
                                                           Wrap(
                                                             spacing: 16,
@@ -686,6 +791,10 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
                                                                           .text
                                                                           .trim()
                                                                           .isEmpty ||
+                                                                      unitPriceController
+                                                                          .text
+                                                                          .trim()
+                                                                          .isEmpty ||
                                                                       selectedStorageLocation ==
                                                                           null) {
                                                                     Get.snackbar(
@@ -735,6 +844,10 @@ class _StoreRoomScreenState extends State<StoreRoomScreen> {
                                                                         isBagChecked,
                                                                     packageWeight:
                                                                         packageWeightController
+                                                                            .text
+                                                                            .trim(),
+                                                                    unitPrice:
+                                                                        unitPriceController
                                                                             .text
                                                                             .trim(),
                                                                     storageLocation:

@@ -1,3 +1,54 @@
+/*
+ * File: main_screen.dart
+ * Project: Marie ERP
+ * Created Date: 2024
+ * 
+ * Copyright (c) 2024 Group 17
+ * 
+ * Authors:
+ * - All Group 17 Members
+ * 
+ * Description:
+ * Main navigation screen of the Marie ERP application that implements a bottom
+ * navigation bar for switching between major features. Handles navigation between
+ * Groups, Storeroom, Stockcards, and Scanning functionality with smooth transitions
+ * and state persistence.
+ * 
+ * Features:
+ * - Bottom navigation with 4 main sections
+ * - IndexedStack for preserving screen states
+ * - Slide-up panel for scan options
+ * - Animated navigation transitions
+ * - State persistence between navigation
+ * - Responsive layout design
+ * 
+ * Libraries Used:
+ * - flutter/material.dart - Flutter's material design widgets
+ * - get - State management (GetX)
+ * - flutter/foundation.dart - Key Flutter primitives
+ * 
+ * External Dependencies:
+ * - get: ^4.6.5
+ *   Source: https://pub.dev/packages/get
+ * 
+ * Assets Required:
+ * - bottom_group.png - Groups tab icon
+ * - bottom_home.png - Storeroom tab icon
+ * - bottom_stockcard.png - Stockcards tab icon
+ * - bottom_scan.jpeg - Scan tab icon
+ * 
+ * State Management:
+ * - Uses GetX for common state (CommonController)
+ * - Local navigation state managed with setState
+ * - Persistent selected items state
+ * 
+ * Modified/Adapted From:
+ * - Flutter bottom navigation implementation guide
+ *   Source: https://docs.flutter.dev/cookbook/design/bottom-navigation
+ * - GetX navigation patterns
+ *   Source: https://github.com/jonataslaw/getx/blob/master/documentation/en_US/route_management.md
+ */
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';

@@ -1,5 +1,51 @@
+/*
+ * File: barcode_scanner_page.dart
+ * Project: Marie ERP
+ * Created Date: 2024
+ * 
+ * Copyright (c) 2024 Group 17
+ * 
+ * Authors:
+ * Syafiq
+ * 
+ * Description:
+ * A Flutter widget that implements barcode scanning functionality for stock management.
+ * Handles both stock-in and stock-out operations with barcode validation, quantity tracking,
+ * and price management. Integrates with a backend API for real-time stock updates.
+ * 
+ * Features:
+ * - Barcode scanning using device camera
+ * - Real-time stock level tracking
+ * - Stock in/out management
+ * - Price per unit calculation
+ * - Secure API integration with token-based authentication
+ * 
+ * Libraries Used:
+ * - flutter/material.dart - Flutter's material design widgets
+ * - flutter/services.dart - Platform services integration
+ * - flutter_secure_storage - Secure credential storage
+ * - get - State management and navigation
+ * - http - API communication
+ * - simple_barcode_scanner - Barcode scanning functionality
+ * 
+ * External Dependencies:
+ * - simple_barcode_scanner: ^0.0.1
+ *   Source: https://pub.dev/packages/simple_barcode_scanner
+ * 
+ * API Endpoints Used:
+ * - findIngredientByBarcode
+ * - manageStock
+ * - stockList
+ * 
+ * Modified/Adapted From:
+ * - Flutter barcode scanner implementation guide
+ *   Source: https://pub.dev/packages/simple_barcode_scanner/example
+ */
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:marie_erp/controller/common_controller.dart';
 import 'package:marie_erp/view/groups_screen.dart';
 import 'package:marie_erp/view/main_screen.dart';
@@ -22,6 +68,7 @@ class BarcodeScannerPage extends StatefulWidget {
 }
 
 class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
+  BarcodeViewController? _controller;
   String? scannedBarcode;
   bool isLoading = false;
 
@@ -87,59 +134,129 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
     }
   }
 
-  Future<void> updateStock({
+  Future<bool> updateStock({
     required String ingredientId,
     required String type,
     required String quantity,
     required String price,
   }) async {
     setState(() => isLoading = true);
+
     try {
+      // 1) Read stored credentials
+      final storage = const FlutterSecureStorage();
+      final userId = await storage.read(key: "userId");
+      final token = await storage.read(key: "token");
+
+      // 2) Build your payload
       final payload = {
         'ingredient_id': ingredientId,
         'type': type,
         'quantity': int.parse(quantity),
         'price_per_unit': double.parse(price),
         'remarks': 'Stock adjustment via scanner',
-        'user_id': null,
+        'user_id': userId != null ? int.parse(userId) : null,
       };
 
+      if (kDebugMode) {
+        print("→ manageStock payload: ${jsonEncode(payload)}");
+      }
+
+      // 3) POST with auth cookie + Accept header
       final response = await http.post(
         Uri.parse(manageStockUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Cookie': 'authorization_token=$token',
+        },
         body: jsonEncode(payload),
-        headers: {'Content-Type': 'application/json'},
       );
 
+      // 4) Check for 201 Created
       if (response.statusCode == 201) {
         Get.snackbar('Success', 'Stock updated successfully');
+        return true;
       } else {
+        debugPrint(
+            "manageStock failed (${response.statusCode}): ${response.body}");
         Get.snackbar('Error', 'Failed to update stock');
+        return false;
       }
     } catch (e) {
       Get.snackbar('Error', 'An error occurred while updating stock');
+      return false;
     } finally {
       setState(() => isLoading = false);
     }
   }
 
   Future<void> startBarcodeScanner() async {
-    final String? result = await SimpleBarcodeScanner.scanBarcode(
-      context,
-      barcodeAppBar: const BarcodeAppBar(
-        appBarTitle: 'Scan Barcode',
-        enableBackButton: true,
-      ),
-      isShowFlashIcon: true,
-      cameraFace: CameraFace.back,
-    );
+    // 1) Clear any old scan
+    setState(() => scannedBarcode = null);
 
-    if (result == null) {
-      Navigator.pop(context);
-      return;
+    String? result;
+    bool confirmed = false;
+
+// 2) Keep scanning until we get a confirmed, valid code
+    while (!confirmed) {
+      try {
+        result = await SimpleBarcodeScanner.scanBarcode(
+          context,
+          barcodeAppBar: const BarcodeAppBar(
+            appBarTitle: 'Scan Barcode',
+          ),
+          isShowFlashIcon: true,
+          cameraFace: CameraFace.back,
+        ); // ← make sure this closing parenthesis + semicolon is here
+      } on PlatformException {
+        Navigator.pop(context);
+        return;
+      }
+
+      // trim off any stray whitespace
+      result = result?.trim() ?? '';
+
+      // user hit the plugin’s Cancel (returned empty or all whitespace)
+      if (result.isEmpty) {
+        Navigator.pop(context);
+        return;
+      }
+
+      // 3) Basic format check (digits only, 8–13 chars)—tweak to your specs
+      if (!RegExp(r'^\d{8,13}$').hasMatch(result)) {
+        Get.snackbar('Invalid barcode',
+            'That doesn’t look like a valid code. Please try again.');
+        continue; // back to scanning
+      }
+
+      // 4) Let the user confirm it
+      confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Confirm barcode'),
+              content: Text(result!),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Rescan'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Use this'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
     }
 
     setState(() => scannedBarcode = result);
-    final ingredientData = await fetchIngredientByBarcode(result);
+
+    final ingredientData = await fetchIngredientByBarcode(result!);
+    // pull in the very first stock-in from the ingredient record
+    final pkgStr = ingredientData['data']['packageWeight']?.toString() ?? '0';
+    final int initialWeight = int.tryParse(pkgStr) ?? 0;
     if (ingredientData.isEmpty) {
       Get.snackbar('Error', 'Ingredient not found. Try again.');
       Navigator.pop(context);
@@ -148,8 +265,31 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
 
     final ingredientIdRaw = ingredientData['data']['ingredientId'];
     final String ingredientId = ingredientIdRaw.toString();
-    final int currentStock = await fetchCurrentStock(ingredientId);
-    debugPrint('currentStock=$currentStock for $ingredientId');
+    // ─── fetch the raw stocks list and pick its closingStock (if any) ─────────────────
+    int currentStock;
+    try {
+      final resp = await http.post(
+        Uri.parse(listStocksUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'item': ingredientId}),
+      );
+      if (resp.statusCode == 200) {
+        final map = jsonDecode(resp.body) as Map<String, dynamic>;
+        final stocks = (map['stocks'] as List<dynamic>?) ?? [];
+        if (stocks.isNotEmpty) {
+          // use the server-computed closing stock
+          currentStock = (stocks.last['closingStock'] as num).toInt();
+        } else {
+          // no stock rows yet → fall back
+          currentStock = initialWeight;
+        }
+      } else {
+        currentStock = initialWeight;
+      }
+    } catch (_) {
+      currentStock = initialWeight;
+    }
+
     final isStockIn = widget.ingredientId == 'stock_in';
     final name = ingredientData['data']['ingredient'] ?? 'Unknown';
     final storageLocation = ingredientData['data']['storageLocation'] ?? 'N/A';
@@ -285,18 +425,26 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> {
                                 Get.snackbar('Error', 'Quantity must be > 0');
                                 return;
                               }
+
+                              if (!isStockIn && qty > currentStock) {
+                                Get.snackbar('Error',
+                                    'Cannot stock out $qty when only $currentStock in stock');
+                                return; // keeps the dialog open for retry
+                              }
+
                               if (isStockIn && price <= 0) {
                                 Get.snackbar('Error', 'Price must be > 0');
                                 return;
                               }
 
-                              await updateStock(
-                                ingredientId: ingredientId.toString(),
+                              // ✅ RIGHT: call updateStock only once
+                              final ok = await updateStock(
+                                ingredientId: ingredientId,
                                 type: isStockIn ? 'in' : 'out',
                                 quantity: qty.toString(),
                                 price: price.toString(),
-                              );
-
+                              ); // if that single call failed, stay in the dialog
+                              if (!ok) return;
                               Navigator.pop(ctx);
                               Navigator.of(context).pushAndRemoveUntil(
                                 MaterialPageRoute(

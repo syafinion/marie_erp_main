@@ -241,10 +241,10 @@ int textY = 10 + barcodeHeight + 20;
 
          // Print each line centered
          String[] lines = {
-            "      " + barcodeData,
-            "      " + itemCode,
-            "      " + itemName,
-            "      " + storageLocation
+            "   " + barcodeData,
+            "   " + itemCode,
+            "   " + itemName,
+            "   " + storageLocation
     };
 
     for (String line : lines) {

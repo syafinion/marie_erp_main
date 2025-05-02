@@ -1,3 +1,4 @@
+//NOT IN USE
 import 'dart:io';
 import 'dart:io' as io;
 
@@ -19,7 +20,7 @@ Future<void> saveAndLaunchFile(List<int> bytes, String fileName) async {
       Platform.isIOS ||
       Platform.isLinux ||
       Platform.isWindows) {
-   /* final Directory directory =
+    /* final Directory directory =
         await path_provider.getApplicationSupportDirectory();
     path = directory.path;*/
 
@@ -31,9 +32,7 @@ Future<void> saveAndLaunchFile(List<int> bytes, String fileName) async {
       path = documents.path;
     }
 
-    await io.Directory('$path/Marie')
-        .create(recursive: true)
-        .then((value) {
+    await io.Directory('$path/Marie').create(recursive: true).then((value) {
       print("StoreageCreated------------------------->${value.path}");
       // return value.path;
     });
@@ -42,7 +41,7 @@ Future<void> saveAndLaunchFile(List<int> bytes, String fileName) async {
   }
   final File file =
       File(Platform.isWindows ? '$path\\$fileName' : '$path/Marie/$fileName');
-  await file.writeAsBytes(bytes/*, flush: true*/);
+  await file.writeAsBytes(bytes /*, flush: true*/);
   if (Platform.isAndroid || Platform.isIOS) {
     print('$path/Marie/$fileName');
     Fluttertoast.showToast(msg: "File Stored in $path/$fileName");

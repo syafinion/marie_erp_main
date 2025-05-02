@@ -1,3 +1,67 @@
+/*
+ * File: store_room_controller.dart
+ * Project: Marie ERP
+ * Created Date: 2024
+ * 
+ * Copyright (c) 2024 Group 17
+ * 
+ * Authors:
+ * - All Group 17 Members
+ * 
+ * Description:
+ * Controller class that manages store room operations in the Marie ERP system.
+ * Handles ingredient management, stock tracking, storage locations, and API
+ * communication for inventory management. Uses GetX for state management.
+ * 
+ * Features:
+ * - Ingredient management by categories
+ * - Stock level tracking and updates
+ * - Storage location management
+ * - Barcode integration
+ * - Stock movement history
+ * - Waste percentage tracking
+ * - Price and unit management
+ * - Multi-category ingredient listing
+ * 
+ * Libraries Used:
+ * - get - State management (GetX)
+ * - http - API communication
+ * - flutter_secure_storage - Secure token storage
+ * - dart:convert - JSON processing
+ * 
+ * External Dependencies:
+ * - get: ^4.6.5
+ *   Source: https://pub.dev/packages/get
+ * - http: ^0.13.5
+ *   Source: https://pub.dev/packages/http
+ * - flutter_secure_storage: ^8.0.0
+ *   Source: https://pub.dev/packages/flutter_secure_storage
+ * 
+ * Models Used:
+ * - IngredientModels - Ingredient data structure
+ * - StockListModel - Stock tracking data
+ * 
+ * API Endpoints:
+ * - POST /ingredientsList - Get ingredients by category
+ * - POST /editIngredient - Update ingredient details
+ * - POST /createIngredient - Add new ingredient
+ * - POST /stockList - Get stock records
+ * - POST /stockCreate - Add stock movement
+ * - POST /stockEdits - Update stock details
+ * - POST /stockDelete - Remove stock record
+ * 
+ * State Management:
+ * - Uses RxList for reactive state updates
+ * - Maintains separate lists for each ingredient category
+ * - Handles API response caching
+ * 
+ * Modified/Adapted From:
+ * - GetX controller patterns
+ *   Source: https://github.com/jonataslaw/getx/blob/master/documentation/en_US/state_management.md
+ * - Flutter HTTP networking patterns
+ *   Source: https://docs.flutter.dev/cookbook/networking/fetch-data
+ */
+
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -267,7 +331,7 @@ class StoreRoomController extends GetxController {
     required bool isBag,
     required String packageWeight,
     // Change this to optional:
-    String? unitPrice,
+    required String unitPrice,
     required String storageLocation,
     required String barcode,
     required String itemCode, // Add the barcode parameter
@@ -288,6 +352,7 @@ class StoreRoomController extends GetxController {
             "isCarton": isCarton,
             "isBag": isBag,
             "packageWeight": packageWeight,
+            "unitPrice": unitPrice,
             "storageLocation": storageLocation,
             "barcode": barcode,
             "itemCode": itemCode, // Include barcode in the payload
