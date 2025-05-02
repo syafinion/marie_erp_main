@@ -127,6 +127,44 @@ Click the link above to watch the demonstration video of the Marie ERP System.
    - Ensure proper database permissions
    - Try restarting XAMPP services
 
+## Device Network Configuration
+
+When running the mobile app against your local Laravel API, you must point `baseUrl` in **lib/constants/url.dart** at the IP address your computer is using on the same Wi-Fi network. Otherwise the device/emulator won’t be able to reach `http://localhost`.
+
+1. **Find your machine’s Wi-Fi IP address**  
+   - **Windows:**  
+     ```powershell
+     ipconfig
+     ```  
+     Look for the “IPv4 Address” under your Wi-Fi adapter (e.g. `192.168.0.197`).  
+   - **macOS/Linux:**  
+     ```bash
+     ifconfig
+     ```  
+     or  
+     ```bash
+     ip addr show
+     ```  
+
+2. **Edit `url.dart`**  
+   Open `lib/constants/url.dart` and update the `baseUrl` line to use that IP, for example:
+   ```dart
+   // Replace 192.168.0.197 with your machine’s Wi-Fi IP
+   var baseUrl = "http://192.168.0.197:8000/api/";
+
+3. **Rebuild the app**
+flutter clean
+flutter pub get
+flutter run
+
+Your device or emulator must be on the same network as your API server in order to call endpoints like
+http://192.168.0.197:8000/api/login or
+http://192.168.0.197:8000/api/ingredient/find-by-barcode.
+
+
+With this in place, anyone testing on a real device or emulator will know exactly how to configure their network to hit the local API.
+
+
 ## License
 
 Copyright (c) 2024 Group 17. All rights reserved.
