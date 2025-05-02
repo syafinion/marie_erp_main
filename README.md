@@ -2,6 +2,11 @@
 
 A Flutter-based Enterprise Resource Planning (ERP) system for restaurant inventory management.
 
+## Project Demo Video
+[![Marie ERP Demo](https://img.youtube.com/vi/OCg42viAJXE/0.jpg)](https://www.youtube.com/watch?v=OCg42viAJXE)
+
+Click the image above to watch the demonstration video of the Marie ERP System.
+
 ## Project Overview
 
 **Developed by:** Group 17  

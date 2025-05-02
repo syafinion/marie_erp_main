@@ -1,3 +1,4 @@
+// file to declare color
 import 'package:flutter/material.dart';
 
 Color primaryColor = const Color(0xffFCA311);

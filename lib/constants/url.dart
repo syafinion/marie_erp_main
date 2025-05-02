@@ -6,7 +6,7 @@
  * Copyright (c) 2024 Group 17
  * 
  * Authors:
- * - All Group 17 Members
+ * - syafiq
  * 
  * Description:
  * Constants file that defines all API endpoints for the Marie ERP system.
